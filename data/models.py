@@ -146,8 +146,6 @@ class GymPlanSetDetail(models.Model):
         return f"Set {self.set_number}: {self.reps} reps x {self.weight} kg"
 
 class GymMediaUpload(models.Model):
-    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-
     file = models.FileField(upload_to='gym_media/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -224,7 +222,7 @@ class GymItem(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True)
     equipment = models.CharField(max_length=50, choices=EQUIPMENT_CHOICES, null=True, blank=True)
 
-    primary_muscle =  models.CharField(max_length=50, choices=MUSCLE_CHOICES, null=True, blank=True)
+    primary_muscle = models.CharField(max_length=50, choices=MUSCLE_CHOICES, null=True, blank=True)
     secondary_muscles = models.JSONField(default=list, blank=True)
     instructions = models.JSONField(default=list, blank=True)
 
@@ -235,11 +233,9 @@ class GymItem(models.Model):
 
     def clean(self):
         # Validazione opzionale per muscoli validi
-        invalid_primary = [m for m in self.primary_muscle if m not in self.MUSCLE_CHOICES]
         invalid_secondary = [m for m in self.secondary_muscles if m not in self.MUSCLE_CHOICES]
-        if invalid_primary or invalid_secondary:
+        if invalid_secondary:
             raise ValidationError({
-                "primary_muscles": f"Valori non validi: {invalid_primary}" if invalid_primary else None,
                 "secondary_muscles": f"Valori non validi: {invalid_secondary}" if invalid_secondary else None
             })
 
