@@ -157,18 +157,18 @@ class GymItem(models.Model):
     FORCE_CHOICES = [
         ("pull", "Pull"),
         ("push", "Push"),
-        ("static", "Static"),
+        ("static", "Statico"),
     ]
 
     LEVEL_CHOICES = [
-        ("beginner", "Beginner"),
-        ("intermediate", "Intermediate"),
-        ("expert", "Expert"),
+        ("beginner", "Principiante"),
+        ("intermediate", "Intermedio"),
+        ("expert", "Esperto"),
     ]
 
     MECHANIC_CHOICES = [
-        ("compound", "Compound"),
-        ("isolation", "Isolation"),
+        ("compound", "Multiarticolare"),
+        ("isolation", "Isolamento"),
     ]
 
     CATEGORY_CHOICES = [
@@ -182,38 +182,38 @@ class GymItem(models.Model):
     ]
 
     EQUIPMENT_CHOICES = [
-        ("bands", "Bands"),
-        ("barbell", "Barbell"),
-        ("body only", "Body Only"),
-        ("cable", "Cable"),
-        ("dumbbell", "Dumbbell"),
-        ("e-z curl bar", "E-Z Curl Bar"),
-        ("exercise ball", "Exercise Ball"),
-        ("foam roll", "Foam Roll"),
-        ("kettlebells", "Kettlebells"),
-        ("machine", "Machine"),
-        ("medicine ball", "Medicine Ball"),
-        ("other", "Other"),
+        ("bands", "Elastici"),
+        ("barbell", "Bilanciere"),
+        ("body only", "Corpo Libero"),
+        ("cable", "Cavi"),
+        ("dumbbell", "Manubri"),
+        ("e-z curl bar", "Bilanciere E-Z"),
+        ("exercise ball", "Palla Fitness"),
+        ("foam roll", "Rullo di Schiuma"),
+        ("kettlebells", "Kettlebell"),
+        ("machine", "Macchinario"),
+        ("medicine ball", "Palla Medica"),
+        ("other", "Altro"),
     ]
 
     MUSCLE_CHOICES = [
-        ("abdominals", "Abdominals"),
-        ("abductors", "Abductors"),
-        ("adductors", "Adductors"),
-        ("biceps", "Biceps"),
-        ("calves", "Calves"),
-        ("chest", "Chest"),
-        ("forearms", "Forearms"),
-        ("glutes", "Glutes"),
-        ("hamstrings", "Hamstrings"),
-        ("lats", "Lats"),
-        ("lower back", "Lower Back"),
-        ("middle back", "Middle Back"),
-        ("neck", "Neck"),
-        ("quadriceps", "Quadriceps"),
-        ("shoulders", "Shoulders"),
-        ("traps", "Traps"),
-        ("triceps", "Triceps"),
+        ("abdominals", "Addominali"),
+        ("abductors", "Abduttori"),
+        ("adductors", "Adduttori"),
+        ("biceps", "Bicipiti"),
+        ("calves", "Polpacci"),
+        ("chest", "Petto"),
+        ("forearms", "Avambracci"),
+        ("glutes", "Glutei"),
+        ("hamstrings", "Femorali"),
+        ("lats", "Dorsali"),
+        ("lower back", "Zona Lombare"),
+        ("middle back", "Schiena Media"),
+        ("neck", "Collo"),
+        ("quadriceps", "Quadricipiti"),
+        ("shoulders", "Spalle"),
+        ("traps", "Trapezi"),
+        ("triceps", "Tricipiti"),
     ]
 
     name = models.CharField(max_length=100)
