@@ -277,22 +277,22 @@ class GymItemDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
 
 
 # ======== GYM MEDIA UPLOAD ========
-class GymMediaUploadRetrieveView(UserQuerySetMixin, generics.RetrieveAPIView):
+class GymMediaUploadRetrieveView(generics.RetrieveAPIView):
     queryset = GymMediaUpload.objects.all()
     serializer_class = GymMediaUploadSerializer
     permission_classes = [IsAuthenticated]
 
-class GymMediaUploadCreateView(UserCreateMixin, generics.CreateAPIView):
+class GymMediaUploadCreateView(generics.CreateAPIView):
     queryset = GymMediaUpload.objects.all()
     serializer_class = GymMediaUploadSerializer
     permission_classes = [IsAuthenticated]
 
-class GymMediaUploadUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
+class GymMediaUploadUpdateView(generics.UpdateAPIView):
     queryset = GymMediaUpload.objects.all()
     serializer_class = GymMediaUploadSerializer
     permission_classes = [IsAuthenticated]
 
-class GymMediaUploadDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
+class GymMediaUploadDeleteView(generics.DestroyAPIView):
     queryset = GymMediaUpload.objects.all()
     serializer_class = GymMediaUploadSerializer
     permission_classes = [IsAuthenticated]
