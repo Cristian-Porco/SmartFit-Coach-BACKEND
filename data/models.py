@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
@@ -26,7 +27,7 @@ class Weight(models.Model):
     weight_value = models.FloatField(validators=[MinValueValidator(0)])
 
     def __str__(self):
-        return f"[{self.id_user}] {self.weight_value}kg - {self.date_recorded}"
+        return f"[{self.author}] {self.weight_value}kg - {self.date_recorded}"
 
 
 class BodyMeasurement(models.Model):
@@ -47,7 +48,7 @@ class BodyMeasurement(models.Model):
     date_recorded = models.DateField(default=timezone.now)
 
     def __str__(self):
-        return f"Misure per {self.user.username} - {self.date_recorded}"
+        return f"Misure per {self.author.username} - {self.date_recorded}"
 
     def average_measurement(self):
         # Calcola la media di alcune misure selezionate
@@ -63,7 +64,7 @@ class FoodItem(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
 
     name = models.CharField(max_length=255)
-    barcode = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    barcode = models.CharField(max_length=50, null=True, blank=True)
     brand = models.CharField(max_length=255, null=True, blank=True)
     kcal_per_100g = models.FloatField()
     protein_per_100g = models.FloatField()
@@ -108,3 +109,223 @@ class FoodPlanItem(models.Model):
     food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
     food_section = models.ForeignKey(FoodPlanSection, on_delete=models.CASCADE)
     quantity_in_grams = models.FloatField()
+
+class GymPlanSection(models.Model):
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+
+    GIORNI_SETTIMANA = [
+        ("lun", "Lunedì"),
+        ("mar", "Martedì"),
+        ("mer", "Mercoledì"),
+        ("gio", "Giovedì"),
+        ("ven", "Venerdì"),
+        ("sab", "Sabato"),
+        ("dom", "Domenica"),
+    ]
+
+    day = models.CharField(max_length=3, choices=GIORNI_SETTIMANA)
+    type = models.CharField(max_length=100, help_text="Es. Push, Gambe, Full Body")
+    note = models.TextField(blank=True)
+
+class GymPlanSetDetail(models.Model):
+    SET_TYPE_CHOICES = [
+        ("standard", "Standard"),
+        ("activation", "Activation (Myo-Reps)"),
+        ("mini", "Mini-set (Myo-Reps)"),
+        ("cluster", "Cluster Subset"),
+    ]
+
+    set_number = models.PositiveIntegerField()
+    reps = models.PositiveIntegerField()
+    weight = models.FloatField()
+    rir = models.PositiveIntegerField(null=True, blank=True)
+    tempo_code = models.CharField(max_length=10, blank=True)
+    set_type = models.CharField(max_length=20, choices=SET_TYPE_CHOICES, default="standard")
+
+    def __str__(self):
+        return f"Set {self.set_number}: {self.reps} reps x {self.weight} kg"
+
+class GymMediaUpload(models.Model):
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+
+    file = models.FileField(upload_to='gym_media/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+class GymItem(models.Model):
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+
+    FORCE_CHOICES = [
+        ("pull", "Pull"),
+        ("push", "Push"),
+        ("static", "Static"),
+    ]
+
+    LEVEL_CHOICES = [
+        ("beginner", "Beginner"),
+        ("intermediate", "Intermediate"),
+        ("expert", "Expert"),
+    ]
+
+    MECHANIC_CHOICES = [
+        ("compound", "Compound"),
+        ("isolation", "Isolation"),
+    ]
+
+    CATEGORY_CHOICES = [
+        ("cardio", "Cardio"),
+        ("olympic weightlifting", "Olympic Weightlifting"),
+        ("plyometrics", "Plyometrics"),
+        ("powerlifting", "Powerlifting"),
+        ("strength", "Strength"),
+        ("stretching", "Stretching"),
+        ("strongman", "Strongman"),
+    ]
+
+    EQUIPMENT_CHOICES = [
+        ("bands", "Bands"),
+        ("barbell", "Barbell"),
+        ("body only", "Body Only"),
+        ("cable", "Cable"),
+        ("dumbbell", "Dumbbell"),
+        ("e-z curl bar", "E-Z Curl Bar"),
+        ("exercise ball", "Exercise Ball"),
+        ("foam roll", "Foam Roll"),
+        ("kettlebells", "Kettlebells"),
+        ("machine", "Machine"),
+        ("medicine ball", "Medicine Ball"),
+        ("other", "Other"),
+    ]
+
+    MUSCLE_CHOICES = [
+        ("abdominals", "Abdominals"),
+        ("abductors", "Abductors"),
+        ("adductors", "Adductors"),
+        ("biceps", "Biceps"),
+        ("calves", "Calves"),
+        ("chest", "Chest"),
+        ("forearms", "Forearms"),
+        ("glutes", "Glutes"),
+        ("hamstrings", "Hamstrings"),
+        ("lats", "Lats"),
+        ("lower back", "Lower Back"),
+        ("middle back", "Middle Back"),
+        ("neck", "Neck"),
+        ("quadriceps", "Quadriceps"),
+        ("shoulders", "Shoulders"),
+        ("traps", "Traps"),
+        ("triceps", "Triceps"),
+    ]
+
+    name = models.CharField(max_length=100)
+
+    force = models.CharField(max_length=50, choices=FORCE_CHOICES, null=True, blank=True)
+    level = models.CharField(max_length=50, choices=LEVEL_CHOICES, blank=True)
+    mechanic = models.CharField(max_length=50, choices=MECHANIC_CHOICES, null=True, blank=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True)
+    equipment = models.CharField(max_length=50, choices=EQUIPMENT_CHOICES, null=True, blank=True)
+
+    primary_muscle =  models.CharField(max_length=50, choices=MUSCLE_CHOICES, null=True, blank=True)
+    secondary_muscles = models.JSONField(default=list, blank=True)
+    instructions = models.JSONField(default=list, blank=True)
+
+    image_urls = models.ManyToManyField(GymMediaUpload)
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        # Validazione opzionale per muscoli validi
+        invalid_primary = [m for m in self.primary_muscle if m not in self.MUSCLE_CHOICES]
+        invalid_secondary = [m for m in self.secondary_muscles if m not in self.MUSCLE_CHOICES]
+        if invalid_primary or invalid_secondary:
+            raise ValidationError({
+                "primary_muscles": f"Valori non validi: {invalid_primary}" if invalid_primary else None,
+                "secondary_muscles": f"Valori non validi: {invalid_secondary}" if invalid_secondary else None
+            })
+
+class GymPlan(models.Model):
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+
+    gym_items = models.ManyToManyField(GymItem, through='GymPlanItem')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    note = models.TextField(blank=True)
+
+    def clean(self):
+        super().clean()
+
+        if self.start_date and self.start_date.weekday() != 0:
+            raise ValidationError({'start_date': 'La data di inizio deve essere un lunedì.'})
+
+        if self.end_date and self.end_date.weekday() != 6:
+            raise ValidationError({'end_date': 'La data di fine deve essere una domenica.'})
+
+        if self.start_date and self.end_date:
+            delta_days = (self.end_date - self.start_date).days
+            if delta_days != 6:
+                raise ValidationError('La settimana deve durare esattamente 7 giorni, da lunedì a domenica.')
+
+    def __str__(self):
+        return f"[{self.author}] Gym Plan {self.start_date} - {self.end_date}"
+
+class GymPlanItem(models.Model):
+    SERIES_TYPE_CHOICES = [
+        ("linear", "Linear"),
+        ("pyramidal", "Pyramidal"),
+        ("reverse_pyramidal", "Reverse Pyramidal"),
+        ("ramping", "Ramping"),
+        ("top_set", "Top Set"),
+        ("back_off", "Back-off"),
+        ("wave", "Wave"),
+        ("cluster", "Cluster"),
+        ("dropset", "Dropset"),
+        ("superset", "Superset"),
+        ("giant_set", "Giant Set"),
+        ("rest_pause", "Rest-Pause"),
+        ("myo_reps", "Myo-Reps"),
+        ("tempo", "Tempo"),
+        ("forced_reps", "Forced Reps"),
+        ("negatives", "Negatives"),
+        ("pre_exhaust", "Pre-Exhaust"),
+        ("post_exhaust", "Post-Exhaust"),
+        ("circuit", "Circuit"),
+        ("amrap", "AMRAP"),
+        ("emom", "EMOM"),
+        ("tabata", "Tabata"),
+        ("autoregulated", "Autoregulated"),
+        ("free", "Free"),
+    ]
+
+    INTENSITY_TECHNIQUES_CHOICES = [
+        ("dropset", "Dropset"),
+        ("superset", "Superset"),
+        ("rest_pause", "Rest-Pause"),
+        ("myo_reps", "Myo-Reps"),
+        ("tempo", "Tempo"),
+        ("forced_reps", "Forced Reps"),
+        ("negatives", "Negatives"),
+        ("pre_exhaust", "Pre-Exhaust"),
+        ("post_exhaust", "Post-Exhaust"),
+        ("giant_set", "Giant Set"),
+    ]
+
+    gym_plan = models.ForeignKey(GymPlan, on_delete=models.CASCADE)
+    section = models.ForeignKey(GymPlanSection, on_delete=models.CASCADE)
+    exercise = models.ForeignKey(GymItem, on_delete=models.CASCADE)
+    set_details = models.ManyToManyField(GymPlanSetDetail, related_name="set_details")
+
+    series_type = models.CharField(max_length=30, choices=SERIES_TYPE_CHOICES)
+    intensity_techniques = models.JSONField(default=list, blank=True)
+    order = models.PositiveIntegerField()
+    rest_seconds = models.PositiveIntegerField()
+    notes = models.TextField(blank=True)
+
+    # Optional parameters
+    rir = models.PositiveIntegerField(null=True, blank=True, help_text="Reps in reserve")
+    tempo_code = models.CharField(max_length=10, blank=True, help_text="e.g., '3-1-2'")
+    target_range = models.CharField(max_length=20, blank=True, help_text="e.g., '8-10 reps'")
+    weekly_progression = models.CharField(max_length=100, blank=True, help_text="e.g., '+2.5% per week'")
+    is_top_set = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.order}. {self.exercise.name} ({self.section})"

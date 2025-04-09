@@ -13,7 +13,13 @@ from .views import (
     FoodPlanItemUpdateView, FoodPlanItemDeleteView,
     FoodPlanSectionListView, FoodPlanSectionRetrieveView,
     FoodPlanSectionCreateView, FoodPlanSectionUpdateView,
-    FoodPlanSectionDeleteView
+    FoodPlanSectionDeleteView, GymItemListView, GymItemListMeView, GymItemRetrieveView, GymItemCreateView,
+    GymItemUpdateView, GymItemDeleteView, GymMediaUploadRetrieveView, GymMediaUploadCreateView,
+    GymMediaUploadUpdateView, GymMediaUploadDeleteView, GymPlanListView, GymPlanRetrieveView, GymPlanCreateView,
+    GymPlanUpdateView, GymPlanDeleteView, GymPlanItemRetrieveView, GymPlanItemCreateView, GymPlanItemUpdateView,
+    GymPlanItemDeleteView, GymPlanSectionListView, GymPlanSectionRetrieveView, GymPlanSectionCreateView,
+    GymPlanSectionUpdateView, GymPlanSectionDeleteView, GymPlanSetDetailDeleteView, GymPlanSetDetailUpdateView,
+    GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView
 )
 
 urlpatterns = [
@@ -61,4 +67,44 @@ urlpatterns = [
     path('food-plan-section/create/', FoodPlanSectionCreateView.as_view(), name='foodplansection-create'),
     path('food-plan-section/update/<int:pk>/', FoodPlanSectionUpdateView.as_view(), name='foodplansection-update'),
     path('food-plan-section/delete/<int:pk>/', FoodPlanSectionDeleteView.as_view(), name='foodplansection-delete'),
+
+    # Gym Item
+    path('gym-item/', GymItemListView.as_view(), name='gymitem-list'),
+    path('gym-item/me/', GymItemListMeView.as_view(), name='gymitem-list'),
+    path('gym-item/<int:pk>/', GymItemRetrieveView.as_view(), name='gymitem-detail'),
+    path('gym-item/create/', GymItemCreateView.as_view(), name='gymitem-create'),
+    path('gym-item/update/<int:pk>/', GymItemUpdateView.as_view(), name='gymitem-update'),
+    path('gym-item/delete/<int:pk>/', GymItemDeleteView.as_view(), name='gymitem-delete'),
+
+    # Gym Plan
+    path('gym-plan/me/', GymPlanListView.as_view(), name='gymplan-list'),
+    path('gym-plan/<int:pk>/', GymPlanRetrieveView.as_view(), name='gymplan-detail'),
+    path('gym-plan/create/', GymPlanCreateView.as_view(), name='gymplan-create'),
+    path('gym-plan/update/<int:pk>/', GymPlanUpdateView.as_view(), name='gymplan-update'),
+    path('gym-plan/delete/<int:pk>/', GymPlanDeleteView.as_view(), name='gymplan-delete'),
+
+    # Gym Plan Items
+    path('gym-plan-item/<int:pk>/', GymPlanItemRetrieveView.as_view(), name='gymplanitem-detail'),
+    path('gym-plan-item/create/', GymPlanItemCreateView.as_view(), name='gymplanitem-create'),
+    path('gym-plan-item/update/<int:pk>/', GymPlanItemUpdateView.as_view(), name='gymplanitem-update'),
+    path('gym-plan-item/delete/<int:pk>/', GymPlanItemDeleteView.as_view(), name='gymplanitem-delete'),
+
+    # Gym Plan Sections
+    path('gym-plan-section/me/', GymPlanSectionListView.as_view(), name='gymplansection-list'),
+    path('gym-plan-section/<int:pk>/', GymPlanSectionRetrieveView.as_view(), name='gymplansection-detail'),
+    path('gym-plan-section/create/', GymPlanSectionCreateView.as_view(), name='gymplansection-create'),
+    path('gym-plan-section/update/<int:pk>/', GymPlanSectionUpdateView.as_view(), name='gymplansection-update'),
+    path('gym-plan-section/delete/<int:pk>/', GymPlanSectionDeleteView.as_view(), name='gymplansection-delete'),
+
+    # Gym Plan Set Detail
+    path('gym-plan-set/<int:pk>/', GymPlanSetDetailRetrieveView.as_view(), name='gymplanset-detail'),
+    path('gym-plan-set/create/', GymPlanSetDetailCreateView.as_view(), name='gymplanset-create'),
+    path('gym-plan-set/update/<int:pk>/', GymPlanSetDetailUpdateView.as_view(), name='gymplanset-update'),
+    path('gym-plan-set/delete/<int:pk>/', GymPlanSetDetailDeleteView.as_view(), name='gymplanset-delete'),
+
+    # Gym Media Upload
+    path('gym-media-upload/<int:pk>/', GymMediaUploadRetrieveView.as_view(), name='gymmediaupload-detail'),
+    path('gym-media-upload/create/', GymMediaUploadCreateView.as_view(), name='gymmediaupload-create'),
+    path('gym-media-upload/update/<int:pk>/', GymMediaUploadUpdateView.as_view(), name='gymmediaupload-update'),
+    path('gym-media-upload/delete/<int:pk>/', GymMediaUploadDeleteView.as_view(), name='gymmediaupload-delete'),
 ]

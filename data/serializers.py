@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import DetailsAccount, Weight, BodyMeasurement, FoodItem, FoodPlanItem, FoodPlan, FoodPlanSection
+from .models import DetailsAccount, Weight, BodyMeasurement, FoodItem, FoodPlanItem, FoodPlan, FoodPlanSection, GymItem, \
+    GymPlan, GymPlanItem, GymPlanSection, GymPlanSetDetail, GymMediaUpload
 
 
 class DetailsAccountSerializer(serializers.ModelSerializer):
@@ -16,7 +17,7 @@ class DetailsAccountSerializer(serializers.ModelSerializer):
 class WeightSerializer(serializers.ModelSerializer):
     class Meta:
         model = Weight
-        fields = ['id', 'id_user', 'date_recorded', 'weight_value']
+        fields = '__all__'
 
 class BodyMeasurementSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,18 +29,15 @@ class BodyMeasurementSerializer(serializers.ModelSerializer):
     def get_average_measurement(self, obj):
         return obj.average_measurement()
 
-
 class FoodItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FoodItem
         fields = '__all__'
 
-
 class FoodPlanItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FoodPlanItem
         fields = '__all__'
-
 
 class FoodPlanSerializer(serializers.ModelSerializer):
     food_items = FoodPlanItemSerializer(many=True, read_only=True, source='foodplanitem_set')
@@ -48,8 +46,37 @@ class FoodPlanSerializer(serializers.ModelSerializer):
         model = FoodPlan
         fields = '__all__'
 
-
 class FoodPlanSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = FoodPlanSection
+        fields = '__all__'
+
+class GymItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymItem
+        fields = '__all__'
+
+class GymPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlan
+        fields = '__all__'
+
+class GymPlanItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlanItem
+        fields = '__all__'
+
+class GymPlanSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlanSection
+        fields = '__all__'
+
+class GymPlanSetDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlanSetDetail
+        fields = '__all__'
+
+class GymMediaUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymMediaUpload
         fields = '__all__'

@@ -5,11 +5,14 @@ from django.shortcuts import get_object_or_404
 
 from .models import (
     DetailsAccount, Weight, BodyMeasurement,
-    FoodItem, FoodPlan, FoodPlanItem, FoodPlanSection
+    FoodItem, FoodPlan, FoodPlanItem, FoodPlanSection, GymItem, GymMediaUpload, GymPlan, GymPlanItem, GymPlanSection,
+    GymPlanSetDetail
 )
 from .serializers import (
     DetailsAccountSerializer, WeightSerializer, BodyMeasurementSerializer,
-    FoodItemSerializer, FoodPlanSerializer, FoodPlanItemSerializer, FoodPlanSectionSerializer
+    FoodItemSerializer, FoodPlanSerializer, FoodPlanItemSerializer, FoodPlanSectionSerializer, GymItemSerializer,
+    GymMediaUploadSerializer, GymPlanSerializer, GymPlanItemSerializer, GymPlanSectionSerializer,
+    GymPlanSetDetailSerializer
 )
 
 
@@ -57,14 +60,12 @@ class WeightCreateView(UserCreateMixin, generics.CreateAPIView):
     queryset = Weight.objects.all()
     serializer_class = WeightSerializer
     permission_classes = [IsAuthenticated]
-    user_field = 'id_user'
 
 
 class WeightListView(UserQuerySetMixin, generics.ListAPIView):
     queryset = Weight.objects.all()
     serializer_class = WeightSerializer
     permission_classes = [IsAuthenticated]
-    user_field = 'id_user'
 
     def get_queryset(self):
         return super().get_queryset().order_by('-date_recorded')
@@ -74,14 +75,12 @@ class WeightUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
     queryset = Weight.objects.all()
     serializer_class = WeightSerializer
     permission_classes = [IsAuthenticated]
-    user_field = 'id_user'
 
 
 class WeightDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     queryset = Weight.objects.all()
     serializer_class = WeightSerializer
     permission_classes = [IsAuthenticated]
-    user_field = 'id_user'
 
 
 # ======== BODY MEASUREMENTS ========
@@ -242,4 +241,156 @@ class FoodPlanSectionUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
 class FoodPlanSectionDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     queryset = FoodPlanSection.objects.all()
     serializer_class = FoodPlanSectionSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# ======== GYM ITEM ========
+class GymItemListView(generics.ListAPIView):
+    queryset = GymItem.objects.all()
+    serializer_class = GymItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymItemListMeView(UserQuerySetMixin, generics.ListAPIView):
+    queryset = GymItem.objects.all()
+    serializer_class = GymItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymItemRetrieveView(UserQuerySetMixin, generics.RetrieveAPIView):
+    queryset = GymItem.objects.all()
+    serializer_class = GymItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymItemCreateView(UserCreateMixin, generics.CreateAPIView):
+    queryset = GymItem.objects.all()
+    serializer_class = GymItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymItemUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
+    queryset = GymItem.objects.all()
+    serializer_class = GymItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymItemDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
+    queryset = GymItem.objects.all()
+    serializer_class = GymItemSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# ======== GYM MEDIA UPLOAD ========
+class GymMediaUploadRetrieveView(UserQuerySetMixin, generics.RetrieveAPIView):
+    queryset = GymMediaUpload.objects.all()
+    serializer_class = GymMediaUploadSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymMediaUploadCreateView(UserCreateMixin, generics.CreateAPIView):
+    queryset = GymMediaUpload.objects.all()
+    serializer_class = GymMediaUploadSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymMediaUploadUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
+    queryset = GymMediaUpload.objects.all()
+    serializer_class = GymMediaUploadSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymMediaUploadDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
+    queryset = GymMediaUpload.objects.all()
+    serializer_class = GymMediaUploadSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# ======== GYM PLAN ========
+class GymPlanListView(UserQuerySetMixin, generics.ListAPIView):
+    queryset = GymPlan.objects.all()
+    serializer_class = GymPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanRetrieveView(UserQuerySetMixin, generics.RetrieveAPIView):
+    queryset = GymPlan.objects.all()
+    serializer_class = GymPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanCreateView(UserCreateMixin, generics.CreateAPIView):
+    queryset = GymPlan.objects.all()
+    serializer_class = GymPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
+    queryset = GymPlan.objects.all()
+    serializer_class = GymPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
+    queryset = GymPlan.objects.all()
+    serializer_class = GymPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# ======== GYM PLAN ITEM ========
+class GymPlanItemRetrieveView(generics.RetrieveAPIView):
+    queryset = GymPlanItem.objects.all()
+    serializer_class = GymPlanItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanItemCreateView(generics.CreateAPIView):
+    queryset = GymPlanItem.objects.all()
+    serializer_class = GymPlanItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanItemUpdateView(generics.UpdateAPIView):
+    queryset = GymPlanItem.objects.all()
+    serializer_class = GymPlanItemSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanItemDeleteView(generics.DestroyAPIView):
+    queryset = GymPlanItem.objects.all()
+    serializer_class = GymPlanItemSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# ======== GYM PLAN SECTION ========
+class GymPlanSectionListView(UserQuerySetMixin, generics.ListAPIView):
+    queryset = GymPlanSection.objects.all()
+    serializer_class = GymPlanSectionSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSectionRetrieveView(UserQuerySetMixin, generics.RetrieveAPIView):
+    queryset = GymPlanSection.objects.all()
+    serializer_class = GymPlanSectionSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSectionCreateView(UserCreateMixin, generics.CreateAPIView):
+    queryset = GymPlanSection.objects.all()
+    serializer_class = GymPlanSectionSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSectionUpdateView(UserQuerySetMixin, generics.UpdateAPIView):
+    queryset = GymPlanSection.objects.all()
+    serializer_class = GymPlanSectionSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSectionDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
+    queryset = GymPlanSection.objects.all()
+    serializer_class = GymPlanSectionSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# ======== GYM PLAN SET DETAIL ========
+class GymPlanSetDetailRetrieveView(generics.RetrieveAPIView):
+    queryset = GymPlanSetDetail.objects.all()
+    serializer_class = GymPlanSetDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSetDetailCreateView(generics.CreateAPIView):
+    queryset = GymPlanSetDetail.objects.all()
+    serializer_class = GymPlanSetDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSetDetailUpdateView(generics.UpdateAPIView):
+    queryset = GymPlanSetDetail.objects.all()
+    serializer_class = GymPlanSetDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSetDetailDeleteView(generics.DestroyAPIView):
+    queryset = GymPlanSetDetail.objects.all()
+    serializer_class = GymPlanSetDetailSerializer
     permission_classes = [IsAuthenticated]
