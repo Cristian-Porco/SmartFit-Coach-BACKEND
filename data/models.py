@@ -110,6 +110,30 @@ class FoodPlanItem(models.Model):
     food_section = models.ForeignKey(FoodPlanSection, on_delete=models.CASCADE)
     quantity_in_grams = models.FloatField()
 
+class GymPlan(models.Model):
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+
+    start_date = models.DateField()
+    end_date = models.DateField()
+    note = models.TextField(blank=True)
+
+    def clean(self):
+        super().clean()
+
+        if self.start_date and self.start_date.weekday() != 0:
+            raise ValidationError({'start_date': 'La data di inizio deve essere un lunedì.'})
+
+        if self.end_date and self.end_date.weekday() != 6:
+            raise ValidationError({'end_date': 'La data di fine deve essere una domenica.'})
+
+        if self.start_date and self.end_date:
+            delta_days = (self.end_date - self.start_date).days
+            if delta_days != 6:
+                raise ValidationError('La settimana deve durare esattamente 7 giorni, da lunedì a domenica.')
+
+    def __str__(self):
+        return f"[{self.author}] Gym Plan {self.start_date} - {self.end_date}"
+
 class GymPlanSection(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
 
@@ -122,6 +146,8 @@ class GymPlanSection(models.Model):
         ("sab", "Sabato"),
         ("dom", "Domenica"),
     ]
+
+    gym_plan = models.ForeignKey(GymPlan, on_delete=models.CASCADE, null=True)
 
     day = models.CharField(max_length=3, choices=GIORNI_SETTIMANA)
     type = models.CharField(max_length=100, help_text="Es. Push, Gambe, Full Body")
@@ -239,31 +265,6 @@ class GymItem(models.Model):
                 "secondary_muscles": f"Valori non validi: {invalid_secondary}" if invalid_secondary else None
             })
 
-class GymPlan(models.Model):
-    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-
-    gym_items = models.ManyToManyField(GymItem, through='GymPlanItem')
-    start_date = models.DateField()
-    end_date = models.DateField()
-    note = models.TextField(blank=True)
-
-    def clean(self):
-        super().clean()
-
-        if self.start_date and self.start_date.weekday() != 0:
-            raise ValidationError({'start_date': 'La data di inizio deve essere un lunedì.'})
-
-        if self.end_date and self.end_date.weekday() != 6:
-            raise ValidationError({'end_date': 'La data di fine deve essere una domenica.'})
-
-        if self.start_date and self.end_date:
-            delta_days = (self.end_date - self.start_date).days
-            if delta_days != 6:
-                raise ValidationError('La settimana deve durare esattamente 7 giorni, da lunedì a domenica.')
-
-    def __str__(self):
-        return f"[{self.author}] Gym Plan {self.start_date} - {self.end_date}"
-
 class GymPlanItem(models.Model):
     SERIES_TYPE_CHOICES = [
         ("linear", "Linear"),
@@ -305,7 +306,6 @@ class GymPlanItem(models.Model):
         ("giant_set", "Giant Set"),
     ]
 
-    gym_plan = models.ForeignKey(GymPlan, on_delete=models.CASCADE)
     section = models.ForeignKey(GymPlanSection, on_delete=models.CASCADE)
     exercise = models.ForeignKey(GymItem, on_delete=models.CASCADE)
     set_details = models.ManyToManyField(GymPlanSetDetail, related_name="set_details")
@@ -325,3 +325,4 @@ class GymPlanItem(models.Model):
 
     def __str__(self):
         return f"{self.order}. {self.exercise.name} ({self.section})"
+

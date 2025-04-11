@@ -57,14 +57,17 @@ class GymItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class GymPlanSerializer(serializers.ModelSerializer):
+    gym_plan_items = serializers.SerializerMethodField()
+
     class Meta:
         model = GymPlan
         fields = '__all__'
 
-class GymPlanItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GymPlanItem
-        fields = '__all__'
+    def get_gym_plan_items(self, obj):
+        return GymPlanItemSerializer(
+            GymPlanItem.objects.filter(section__gym_plan=obj),
+            many=True
+        ).data
 
 class GymPlanSectionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,4 +82,13 @@ class GymPlanSetDetailSerializer(serializers.ModelSerializer):
 class GymMediaUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymMediaUpload
+        fields = '__all__'
+
+class GymPlanItemSerializer(serializers.ModelSerializer):
+    section = GymPlanSectionSerializer(read_only=True)
+    exercise = GymItemSerializer(read_only=True)
+    set_details = GymPlanSetDetailSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = GymPlanItem
         fields = '__all__'
