@@ -75,6 +75,8 @@ class GymPlanSectionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class GymPlanSetDetailSerializer(serializers.ModelSerializer):
+    exercise = GymItemSerializer(read_only=True)
+
     class Meta:
         model = GymPlanSetDetail
         fields = '__all__'
@@ -86,8 +88,7 @@ class GymMediaUploadSerializer(serializers.ModelSerializer):
 
 class GymPlanItemSerializer(serializers.ModelSerializer):
     section = GymPlanSectionSerializer(read_only=True)
-    exercise = GymItemSerializer(read_only=True)
-    set_details = GymPlanSetDetailSerializer(many=True, read_only=True)
+    sets = GymPlanSetDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = GymPlanItem

@@ -132,7 +132,7 @@ class GymPlan(models.Model):
                 raise ValidationError('La settimana deve durare esattamente 7 giorni, da lunedì a domenica.')
 
     def __str__(self):
-        return f"[{self.author}] Gym Plan {self.start_date} - {self.end_date}"
+        return f"[{self.author}] Scheda di allenamento da {self.start_date} a {self.end_date}"
 
 class GymPlanSection(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
@@ -153,8 +153,13 @@ class GymPlanSection(models.Model):
     type = models.CharField(max_length=100, help_text="Es. Push, Gambe, Full Body")
     note = models.TextField(blank=True)
 
+    def __str__(self):
+        return f"[{self.author}] Sezione della scheda di allenamento da {self.gym_plan.start_date} a {self.gym_plan.end_date} - GIORNO {self.day}"
+
 class GymPlanSetDetail(models.Model):
-    plan_item = models.ForeignKey('GymPlanItem', on_delete=models.CASCADE, related_name='sets', default=1)
+    plan_item = models.ForeignKey('GymPlanItem', on_delete=models.CASCADE, related_name='sets')
+    exercise = models.ForeignKey('GymItem', on_delete=models.CASCADE, default=None)
+
     order = models.PositiveIntegerField(help_text="Ordine del set nella lista", default=0)
     set_number = models.PositiveIntegerField()
     prescribed_reps = models.PositiveIntegerField()
@@ -173,7 +178,7 @@ class GymPlanSetDetail(models.Model):
         ordering = ['order']
 
     def __str__(self):
-        return f"Set {self.set_number} of {self.plan_item} (order {self.order})"
+        return f"[{self.exercise}] Ordine: {self.order} - Numero set: {self.set_number}"
 
 class GymMediaUpload(models.Model):
     file = models.FileField(upload_to='gym_media/')
@@ -271,7 +276,6 @@ class GymItem(models.Model):
 
 class GymPlanItem(models.Model):
     section = models.ForeignKey('GymPlanSection', on_delete=models.CASCADE)
-    exercise = models.ForeignKey('GymItem', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True, null=True)
 
@@ -305,5 +309,4 @@ class GymPlanItem(models.Model):
         ordering = ['order']
 
     def __str__(self):
-        return f"{self.exercise.name} in {self.section.name}"
-
+        return f"{self.notes}"
