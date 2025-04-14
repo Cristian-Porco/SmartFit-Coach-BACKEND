@@ -154,22 +154,26 @@ class GymPlanSection(models.Model):
     note = models.TextField(blank=True)
 
 class GymPlanSetDetail(models.Model):
-    SET_TYPE_CHOICES = [
-        ("standard", "Standard"),
-        ("activation", "Activation (Myo-Reps)"),
-        ("mini", "Mini-set (Myo-Reps)"),
-        ("cluster", "Cluster Subset"),
-    ]
-
+    plan_item = models.ForeignKey('GymPlanItem', on_delete=models.CASCADE, related_name='sets')
+    order = models.PositiveIntegerField(help_text="Ordine del set nella lista", default=0)
     set_number = models.PositiveIntegerField()
-    reps = models.PositiveIntegerField()
-    weight = models.FloatField()
-    rir = models.PositiveIntegerField(null=True, blank=True)
-    tempo_code = models.CharField(max_length=10, blank=True)
-    set_type = models.CharField(max_length=20, choices=SET_TYPE_CHOICES, default="standard")
+    prescribed_reps = models.PositiveIntegerField()
+    actual_reps = models.PositiveIntegerField(blank=True, null=True)
+    rir = models.PositiveIntegerField(blank=True, null=True, help_text="Reps in reserve")
+    rest_seconds = models.PositiveIntegerField(blank=True, null=True)
+    weight = models.FloatField(blank=True, null=True, help_text="Peso in kg")
+    tempo = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        help_text="Formato: 'eccentrica-pausa-concentrica', es. '3-1-2'"
+    )
+
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
-        return f"Set {self.set_number}: {self.reps} reps x {self.weight} kg"
+        return f"Set {self.set_number} of {self.plan_item} (order {self.order})"
 
 class GymMediaUpload(models.Model):
     file = models.FileField(upload_to='gym_media/')
@@ -266,63 +270,40 @@ class GymItem(models.Model):
             })
 
 class GymPlanItem(models.Model):
-    SERIES_TYPE_CHOICES = [
-        ("linear", "Linear"),
-        ("pyramidal", "Pyramidal"),
-        ("reverse_pyramidal", "Reverse Pyramidal"),
-        ("ramping", "Ramping"),
-        ("top_set", "Top Set"),
-        ("back_off", "Back-off"),
-        ("wave", "Wave"),
-        ("cluster", "Cluster"),
-        ("dropset", "Dropset"),
-        ("superset", "Superset"),
-        ("giant_set", "Giant Set"),
-        ("rest_pause", "Rest-Pause"),
-        ("myo_reps", "Myo-Reps"),
-        ("tempo", "Tempo"),
-        ("forced_reps", "Forced Reps"),
-        ("negatives", "Negatives"),
-        ("pre_exhaust", "Pre-Exhaust"),
-        ("post_exhaust", "Post-Exhaust"),
-        ("circuit", "Circuit"),
-        ("amrap", "AMRAP"),
-        ("emom", "EMOM"),
-        ("tabata", "Tabata"),
-        ("autoregulated", "Autoregulated"),
-        ("free", "Free"),
-    ]
+    section = models.ForeignKey('GymPlanSection', on_delete=models.CASCADE)
+    exercise = models.ForeignKey('GymItem', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0)
+    notes = models.TextField(blank=True, null=True)
 
-    INTENSITY_TECHNIQUES_CHOICES = [
-        ("dropset", "Dropset"),
-        ("superset", "Superset"),
-        ("rest_pause", "Rest-Pause"),
-        ("myo_reps", "Myo-Reps"),
-        ("tempo", "Tempo"),
-        ("forced_reps", "Forced Reps"),
-        ("negatives", "Negatives"),
-        ("pre_exhaust", "Pre-Exhaust"),
-        ("post_exhaust", "Post-Exhaust"),
-        ("giant_set", "Giant Set"),
-    ]
+    class TechniqueType(models.TextChoices):
+        LINEAR = "linear", "Linear"
+        DROP_SET = 'drop_set', 'Drop Set / Stripping'
+        SUPER_SET = 'super_set', 'Super Set / Giant Set'
+        FORCED_REPS = 'forced_reps', 'Serie Forzate'
+        HALF_REPS = 'half_reps', 'Half Reps'
+        REST_PAUSE = 'rest_pause', 'Rest-Pause'
+        MYOREPS = 'myoreps', 'MyoReps'
+        PRE_FATIGUE = 'pre_fatigue', 'Pre-Affaticamento'
+        NEGATIVE = 'negative', 'Negativa Forzata'
+        PEAK_CONTRACTION = 'peak_contraction', 'Contrazione di Picco'
+        TEMPO = 'tempo', 'Tempo Training / TUT'
+        ISOMETRIC = 'isometric', 'Contrazioni Isometriche'
+        SEVEN_SEVEN = 'seven_seven', '21 Serie / 7-7-7'
+        CLUSTER = 'cluster', 'Cluster Set'
+        PYRAMID = 'pyramid', 'Piramidale'
+        WAVE_LOADING = 'wave_loading', 'Wave Loading'
+        ISOMETRIC_OVERLOAD = 'isometric_overload', 'Isometric Overload'
+        ACCOMODATING_RESISTANCE = 'accomodating', 'Accommodating Resistance'
+        PAUSE_REPS = 'pause_reps', 'Pause Reps'
+        EMOM = 'emom', 'EMOM'
+        AMRAP = 'amrap', 'AMRAP'
+        DEATH_SET = 'death_set', 'Death Set'
 
-    section = models.ForeignKey(GymPlanSection, on_delete=models.CASCADE)
-    exercise = models.ForeignKey(GymItem, on_delete=models.CASCADE)
-    set_details = models.ManyToManyField(GymPlanSetDetail, related_name="set_details")
+    intensity_techniques = models.JSONField(default=list, blank=True, help_text="Lista di tecniche d’intensità (es: ['drop_set', 'tempo'])")
 
-    series_type = models.CharField(max_length=30, choices=SERIES_TYPE_CHOICES)
-    intensity_techniques = models.JSONField(default=list, blank=True)
-    order = models.PositiveIntegerField()
-    rest_seconds = models.PositiveIntegerField()
-    notes = models.TextField(blank=True)
-
-    # Optional parameters
-    rir = models.PositiveIntegerField(null=True, blank=True, help_text="Reps in reserve")
-    tempo_code = models.CharField(max_length=10, blank=True, help_text="e.g., '3-1-2'")
-    target_range = models.CharField(max_length=20, blank=True, help_text="e.g., '8-10 reps'")
-    weekly_progression = models.CharField(max_length=100, blank=True, help_text="e.g., '+2.5% per week'")
-    is_top_set = models.BooleanField(default=False)
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
-        return f"{self.order}. {self.exercise.name} ({self.section})"
+        return f"{self.exercise.name} in {self.section.name}"
 
