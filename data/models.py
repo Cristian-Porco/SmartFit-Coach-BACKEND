@@ -154,7 +154,7 @@ class GymPlanSection(models.Model):
     note = models.TextField(blank=True)
 
 class GymPlanSetDetail(models.Model):
-    plan_item = models.ForeignKey('GymPlanItem', on_delete=models.CASCADE, related_name='sets')
+    plan_item = models.ForeignKey('GymPlanItem', on_delete=models.CASCADE, related_name='sets', default=1)
     order = models.PositiveIntegerField(help_text="Ordine del set nella lista", default=0)
     set_number = models.PositiveIntegerField()
     prescribed_reps = models.PositiveIntegerField()
