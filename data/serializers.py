@@ -51,10 +51,49 @@ class FoodPlanSectionSerializer(serializers.ModelSerializer):
         model = FoodPlanSection
         fields = '__all__'
 
+
 class GymItemSerializer(serializers.ModelSerializer):
+    force_display = serializers.SerializerMethodField()
+    level_display = serializers.SerializerMethodField()
+    mechanic_display = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
+    equipment_display = serializers.SerializerMethodField()
+    primary_muscle_display = serializers.SerializerMethodField()
+
     class Meta:
         model = GymItem
-        fields = '__all__'
+        fields = [
+            'id',
+            'author',
+            'name',
+            'force', 'force_display',
+            'level', 'level_display',
+            'mechanic', 'mechanic_display',
+            'category', 'category_display',
+            'equipment', 'equipment_display',
+            'primary_muscle', 'primary_muscle_display',
+            'secondary_muscles',
+            'instructions',
+            'image_urls',
+        ]
+
+    def get_force_display(self, obj):
+        return obj.get_force_display() if obj.force else None
+
+    def get_level_display(self, obj):
+        return obj.get_level_display() if obj.level else None
+
+    def get_mechanic_display(self, obj):
+        return obj.get_mechanic_display() if obj.mechanic else None
+
+    def get_category_display(self, obj):
+        return obj.get_category_display() if obj.category else None
+
+    def get_equipment_display(self, obj):
+        return obj.get_equipment_display() if obj.equipment else None
+
+    def get_primary_muscle_display(self, obj):
+        return obj.get_primary_muscle_display() if obj.primary_muscle else None
 
 class GymPlanSerializer(serializers.ModelSerializer):
     gym_plan_items = serializers.SerializerMethodField()
@@ -74,11 +113,22 @@ class GymPlanSynthesizedSerializer(serializers.ModelSerializer):
         model = GymPlan
         fields = '__all__'
 
-
 class GymPlanSectionSerializer(serializers.ModelSerializer):
+    day_display = serializers.SerializerMethodField()
+
     class Meta:
         model = GymPlanSection
-        fields = '__all__'
+        fields = [
+            'id',
+            'author',
+            'gym_plan',
+            'day', 'day_display',
+            'type',
+            'note',
+        ]
+
+    def get_day_display(self, obj):
+        return obj.get_day_display() if obj.day else None
 
 class GymPlanSetDetailSerializer(serializers.ModelSerializer):
     exercise = GymItemSerializer(read_only=True)
@@ -95,7 +145,25 @@ class GymMediaUploadSerializer(serializers.ModelSerializer):
 class GymPlanItemSerializer(serializers.ModelSerializer):
     section = GymPlanSectionSerializer(read_only=True)
     sets = GymPlanSetDetailSerializer(many=True, read_only=True)
+    intensity_techniques_display = serializers.SerializerMethodField()
 
     class Meta:
         model = GymPlanItem
-        fields = '__all__'
+        fields = [
+            'id',
+            'section',
+            'order',
+            'sets',
+            'notes',
+            'intensity_techniques',
+            'intensity_techniques_display',  # aggiunto campo leggibile
+        ]
+
+    def get_intensity_techniques_display(self, obj):
+        if not obj.intensity_techniques:
+            return []
+        return [
+            GymPlanItem.TechniqueType(tech).label
+            for tech in obj.intensity_techniques
+            if tech in GymPlanItem.TechniqueType.values
+        ]
