@@ -69,6 +69,12 @@ class GymPlanSerializer(serializers.ModelSerializer):
             many=True
         ).data
 
+class GymPlanSynthesizedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlan
+        fields = '__all__'
+
+
 class GymPlanSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymPlanSection

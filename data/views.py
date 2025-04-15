@@ -12,7 +12,7 @@ from .serializers import (
     DetailsAccountSerializer, WeightSerializer, BodyMeasurementSerializer,
     FoodItemSerializer, FoodPlanSerializer, FoodPlanItemSerializer, FoodPlanSectionSerializer, GymItemSerializer,
     GymMediaUploadSerializer, GymPlanSerializer, GymPlanItemSerializer, GymPlanSectionSerializer,
-    GymPlanSetDetailSerializer
+    GymPlanSetDetailSerializer, GymPlanSynthesizedSerializer
 )
 
 
@@ -302,6 +302,11 @@ class GymMediaUploadDeleteView(generics.DestroyAPIView):
 class GymPlanListView(UserQuerySetMixin, generics.ListAPIView):
     queryset = GymPlan.objects.all()
     serializer_class = GymPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+class GymPlanSynthesizedListView(UserQuerySetMixin, generics.ListAPIView):
+    queryset = GymPlan.objects.all()
+    serializer_class = GymPlanSynthesizedSerializer
     permission_classes = [IsAuthenticated]
 
 class GymPlanRetrieveView(UserQuerySetMixin, generics.RetrieveAPIView):
