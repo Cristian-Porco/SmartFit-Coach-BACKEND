@@ -163,19 +163,20 @@ class GymPlanSetDetail(models.Model):
     order = models.PositiveIntegerField(help_text="Ordine del set nella lista", default=0)
     set_number = models.PositiveIntegerField()
 
-    prescribed_reps_1 = models.PositiveIntegerField()
-    actual_reps_1 = models.PositiveIntegerField(blank=True, null=True)
+    prescribed_reps_1 = models.PositiveIntegerField(default=0)
+    actual_reps_1 = models.PositiveIntegerField(blank=True, null=True, default=0)
     prescribed_reps_2 = models.PositiveIntegerField(default=0)
     actual_reps_2 = models.PositiveIntegerField(blank=True, null=True, default=0)
 
-    rir = models.PositiveIntegerField(blank=True, null=True, help_text="Reps in reserve")
-    rest_seconds = models.PositiveIntegerField(blank=True, null=True)
-    weight = models.FloatField(blank=True, null=True, help_text="Peso in kg")
+    rir = models.PositiveIntegerField(blank=True, null=True, help_text="Reps in reserve", default=0)
+    rest_seconds = models.PositiveIntegerField(blank=True, null=True, default=60)
+    weight = models.FloatField(blank=True, null=True, help_text="Peso in kg", default=0)
     tempo_fcr = models.CharField(
         max_length=10,
         blank=True,
         null=True,
-        help_text="Formato: 'eccentrica-pausa-concentrica', es. '3-1-2'"
+        help_text="Formato: 'eccentrica-pausa-concentrica', es. '3-1-2'",
+        default="0-0-0"
     )
 
     class Meta:
@@ -286,7 +287,6 @@ class GymPlanItem(models.Model):
     class TechniqueType(models.TextChoices):
         BILATERAL = 'bilateral', 'Bilaterale (entrambe le gambe)'
         UNILATERAL = 'unilateral', 'Unilaterale (gamba singola)'
-        ALTERNATE = 'alternate', 'Alternato'
         TEMPO_BASED = 'tempo-based', 'Tempo-Based (durata fissa)'
         DROP_SET = 'drop_set', 'Drop Set / Stripping'
         SUPER_SET = 'super_set', 'Super Set / Giant Set'
