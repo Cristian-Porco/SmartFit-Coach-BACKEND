@@ -162,12 +162,16 @@ class GymPlanSetDetail(models.Model):
 
     order = models.PositiveIntegerField(help_text="Ordine del set nella lista", default=0)
     set_number = models.PositiveIntegerField()
-    prescribed_reps = models.PositiveIntegerField()
-    actual_reps = models.PositiveIntegerField(blank=True, null=True)
+
+    prescribed_reps_1 = models.PositiveIntegerField()
+    actual_reps_1 = models.PositiveIntegerField(blank=True, null=True)
+    prescribed_reps_2 = models.PositiveIntegerField(default=0)
+    actual_reps_2 = models.PositiveIntegerField(blank=True, null=True, default=0)
+
     rir = models.PositiveIntegerField(blank=True, null=True, help_text="Reps in reserve")
     rest_seconds = models.PositiveIntegerField(blank=True, null=True)
     weight = models.FloatField(blank=True, null=True, help_text="Peso in kg")
-    tempo = models.CharField(
+    tempo_fcr = models.CharField(
         max_length=10,
         blank=True,
         null=True,
@@ -280,7 +284,10 @@ class GymPlanItem(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     class TechniqueType(models.TextChoices):
-        LINEAR = "linear", "Linear"
+        BILATERAL = 'bilateral', 'Bilaterale (entrambe le gambe)'
+        UNILATERAL = 'unilateral', 'Unilaterale (gamba singola)'
+        ALTERNATE = 'alternate', 'Alternato'
+        TEMPO_BASED = 'tempo-based', 'Tempo-Based (durata fissa)'
         DROP_SET = 'drop_set', 'Drop Set / Stripping'
         SUPER_SET = 'super_set', 'Super Set / Giant Set'
         FORCED_REPS = 'forced_reps', 'Serie Forzate'
@@ -290,7 +297,7 @@ class GymPlanItem(models.Model):
         PRE_FATIGUE = 'pre_fatigue', 'Pre-Affaticamento'
         NEGATIVE = 'negative', 'Negativa Forzata'
         PEAK_CONTRACTION = 'peak_contraction', 'Contrazione di Picco'
-        TEMPO = 'tempo', 'Tempo Training / TUT'
+        TEMPO = 'tempoTUT', 'Tempo Training / TUT'
         ISOMETRIC = 'isometric', 'Contrazioni Isometriche'
         SEVEN_SEVEN = 'seven_seven', '21 Serie / 7-7-7'
         CLUSTER = 'cluster', 'Cluster Set'
