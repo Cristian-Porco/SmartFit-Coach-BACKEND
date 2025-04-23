@@ -130,7 +130,16 @@ class GymPlanSectionSerializer(serializers.ModelSerializer):
     def get_day_display(self, obj):
         return obj.get_day_display() if obj.day else None
 
+
 class GymPlanSetDetailSerializer(serializers.ModelSerializer):
+    # ID accettato in scrittura
+    exercise_id = serializers.PrimaryKeyRelatedField(
+        queryset=GymItem.objects.all(),
+        source='exercise',
+        write_only=True
+    )
+
+    # Oggetto completo visibile in lettura
     exercise = GymItemSerializer(read_only=True)
 
     class Meta:
