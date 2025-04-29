@@ -305,7 +305,7 @@ class GymPlanListView(UserQuerySetMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
 class GymPlanSynthesizedListView(UserQuerySetMixin, generics.ListAPIView):
-    queryset = GymPlan.objects.all()
+    queryset = GymPlan.objects.all().order_by('-start_date')
     serializer_class = GymPlanSynthesizedSerializer
     permission_classes = [IsAuthenticated]
 
