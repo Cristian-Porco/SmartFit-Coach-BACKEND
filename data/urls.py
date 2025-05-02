@@ -19,7 +19,7 @@ from .views import (
     GymPlanUpdateView, GymPlanDeleteView, GymPlanItemRetrieveView, GymPlanItemCreateView, GymPlanItemUpdateView,
     GymPlanItemDeleteView, GymPlanSectionListView, GymPlanSectionRetrieveView, GymPlanSectionCreateView,
     GymPlanSectionUpdateView, GymPlanSectionDeleteView, GymPlanSetDetailDeleteView, GymPlanSetDetailUpdateView,
-    GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView
+    GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order
 )
 
 urlpatterns = [
@@ -89,6 +89,7 @@ urlpatterns = [
     path('gym-plan-item/create/', GymPlanItemCreateView.as_view(), name='gymplanitem-create'),
     path('gym-plan-item/update/<int:pk>/', GymPlanItemUpdateView.as_view(), name='gymplanitem-update'),
     path('gym-plan-item/delete/<int:pk>/', GymPlanItemDeleteView.as_view(), name='gymplanitem-delete'),
+    path('gym-plan-item/first-available-order/<int:section_id>/', get_first_available_order, name='first_available_order'),
 
     # Gym Plan Sections
     path('gym-plan-section/me/', GymPlanSectionListView.as_view(), name='gymplansection-list'),

@@ -1,6 +1,8 @@
 from rest_framework import generics, serializers
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from .models import (
@@ -246,7 +248,7 @@ class FoodPlanSectionDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
 
 # ======== GYM ITEM ========
 class GymItemListView(generics.ListAPIView):
-    queryset = GymItem.objects.all()
+    queryset = GymItem.objects.all().order_by('name')
     serializer_class = GymItemSerializer
     permission_classes = [IsAuthenticated]
 
@@ -350,6 +352,21 @@ class GymPlanItemDeleteView(generics.DestroyAPIView):
     queryset = GymPlanItem.objects.all()
     serializer_class = GymPlanItemSerializer
     permission_classes = [IsAuthenticated]
+
+
+@api_view(['GET'])
+def get_first_available_order(request, section_id):
+    """
+    Restituisce il primo valore libero per il campo 'order' all'interno di una sezione specifica.
+    """
+    used_orders = GymPlanItem.objects.filter(section_id=section_id).values_list('order', flat=True)
+    used_set = set(used_orders)
+
+    i = 0
+    while i in used_set:
+        i += 1
+
+    return Response({'first_available_order': i})
 
 
 # ======== GYM PLAN SECTION ========

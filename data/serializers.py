@@ -152,6 +152,11 @@ class GymMediaUploadSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class GymPlanItemSerializer(serializers.ModelSerializer):
+    section_id = serializers.PrimaryKeyRelatedField(
+        queryset=GymPlanSection.objects.all(),
+        source='section',
+        write_only=True
+    )
     section = GymPlanSectionSerializer(read_only=True)
     sets = GymPlanSetDetailSerializer(many=True, read_only=True)
     intensity_techniques_display = serializers.SerializerMethodField()
@@ -161,6 +166,7 @@ class GymPlanItemSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'section',
+            'section_id',
             'order',
             'sets',
             'notes',
