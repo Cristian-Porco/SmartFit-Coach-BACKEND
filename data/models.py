@@ -38,8 +38,7 @@ class DetailsAccount(models.Model):
 
     goal_targets = models.CharField(
         choices=GOAL_CHOICES,
-        blank=True,
-        default=['fitness']
+        blank=True
     )
 
     def __str__(self):
