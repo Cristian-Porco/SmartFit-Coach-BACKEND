@@ -4,17 +4,42 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
 
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 class DetailsAccount(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     date_of_birth = models.DateField()
     biological_gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female')])
     height_cm = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(300)])
+
     profile_picture = models.ImageField(
         upload_to='profile_pics/',
         null=True,
         blank=True,
         default='profile_pics/default.jpg'
+    )
+
+    goal_description = models.CharField(
+        max_length=160,
+        blank=True,
+        default='',
+        help_text="Descrivi brevemente il tuo obiettivo (max 160 caratteri)"
+    )
+
+    GOAL_CHOICES = [
+        ('fitness', 'Fitness'),
+        ('bodybuilding', 'Bodybuilding'),
+        ('powerlifting', 'Powerlifting'),
+        ('streetlifting', 'Streetlifting'),
+    ]
+
+    goal_targets = models.CharField(
+        choices=GOAL_CHOICES,
+        blank=True,
+        default=['fitness']
     )
 
     def __str__(self):
@@ -150,7 +175,7 @@ class GymPlanSection(models.Model):
     gym_plan = models.ForeignKey(GymPlan, on_delete=models.CASCADE, null=True)
 
     day = models.CharField(max_length=3, choices=GIORNI_SETTIMANA)
-    type = models.CharField(max_length=100, help_text="Es. Push, Gambe, Full Body")
+    type = models.CharField(max_length=100, help_text="Es. Push, Gambe, Full Body", blank=True)
     note = models.TextField(blank=True)
 
     def __str__(self):
@@ -184,6 +209,14 @@ class GymPlanSetDetail(models.Model):
 
     def __str__(self):
         return f"[{self.exercise}] Ordine: {self.order} - Numero set: {self.set_number}"
+
+    def delete(self, *args, **kwargs):
+        plan_item = self.plan_item
+        super().delete(*args, **kwargs)
+
+        # Se non ci sono più set legati a questo plan_item, lo elimino
+        if plan_item.sets.count() == 0:
+            plan_item.delete()
 
 class GymMediaUpload(models.Model):
     file = models.FileField(upload_to='gym_media/')
@@ -285,6 +318,7 @@ class GymPlanItem(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     class TechniqueType(models.TextChoices):
+        NULL = 'null', 'Null'
         BILATERAL = 'bilateral', 'Bilaterale (entrambe le gambe)'
         UNILATERAL = 'unilateral', 'Unilaterale (gamba singola)'
         TEMPO_BASED = 'tempo-based', 'Tempo-Based (durata fissa)'

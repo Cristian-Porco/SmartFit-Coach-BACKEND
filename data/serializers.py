@@ -12,7 +12,7 @@ class DetailsAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetailsAccount
         fields = ['author', 'username', 'first_name', 'last_name', 'date_of_birth', 'biological_gender', 'height_cm',
-                  'email', 'profile_picture']
+                  'email', 'profile_picture', 'goal_description', 'goal_targets']
 
 class WeightSerializer(serializers.ModelSerializer):
     class Meta:
