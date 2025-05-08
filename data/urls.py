@@ -19,7 +19,8 @@ from .views import (
     GymPlanUpdateView, GymPlanDeleteView, GymPlanItemRetrieveView, GymPlanItemCreateView, GymPlanItemUpdateView,
     GymPlanItemDeleteView, GymPlanSectionListView, GymPlanSectionRetrieveView, GymPlanSectionCreateView,
     GymPlanSectionUpdateView, GymPlanSectionDeleteView, GymPlanSetDetailDeleteView, GymPlanSetDetailUpdateView,
-    GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order
+    GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order,
+    WeightAnalysisAIView
 )
 
 urlpatterns = [
@@ -32,6 +33,7 @@ urlpatterns = [
     path('weight/create/', WeightCreateView.as_view(), name='weight-create'),
     path('weight/update/<int:pk>/', WeightUpdateView.as_view(), name='weight-update'),
     path('weight/delete/<int:pk>/', WeightDeleteView.as_view(), name='weight-delete'),
+    path("weight/analysis/", WeightAnalysisAIView.as_view(), name="weight-analysis"),
 
     # Body Measurements
     path('body-measurement/me/', BodyMeasurementListView.as_view(), name='body-list'),

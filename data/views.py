@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 
 from .models import (
     DetailsAccount, Weight, BodyMeasurement,
@@ -16,6 +17,7 @@ from .serializers import (
     GymMediaUploadSerializer, GymPlanSerializer, GymPlanItemSerializer, GymPlanSectionSerializer,
     GymPlanSetDetailSerializer, GymPlanSynthesizedSerializer
 )
+from .utils import generate_weight_analysis
 
 
 # ======== MIXINS PER OTTIMIZZARE ========
@@ -71,6 +73,28 @@ class WeightListView(UserQuerySetMixin, generics.ListAPIView):
 
     def get_queryset(self):
         return super().get_queryset().order_by('-date_recorded')
+
+
+class WeightAnalysisAIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            details = DetailsAccount.objects.get(author=user)
+        except DetailsAccount.DoesNotExist:
+            return Response({"error": "Profilo non trovato"}, status=404)
+
+        weight_data = Weight.objects.filter(author=user).order_by("date_recorded")
+        weights = [(w.date_recorded.strftime("%Y-%m-%d"), w.weight_value) for w in weight_data]
+
+        if not weights:
+            return Response({"error": "Nessun dato di peso registrato"}, status=400)
+
+        analysis = generate_weight_analysis(weights, details.goal_targets)
+
+        return Response({"analysis": analysis})
 
 
 class WeightUpdateView(UserQuerySetMixin, generics.UpdateAPIView):

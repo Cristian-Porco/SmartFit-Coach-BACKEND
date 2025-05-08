@@ -1,19 +1,10 @@
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db import models
 from django.utils import timezone
-
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
-
-
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 
-from .utils import infer_goal_target  # importa la funzione dalla fase 2
+from .utils import infer_goal_target, explain_goal_target  # importa la funzione dalla fase 2
 
 class DetailsAccount(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
@@ -42,33 +33,35 @@ class DetailsAccount(models.Model):
         ('streetlifting', 'Streetlifting'),
     ]
 
-    goal_targets = models.CharField(
-        choices=GOAL_CHOICES,
-        blank=True
+    goal_targets = models.CharField(choices=GOAL_CHOICES, blank=True)
+
+    # 🆕 Campo per spiegazione generata
+    goal_targets_explanation = models.TextField(
+        blank=True,
+        help_text="Spiegazione generata dall'IA sul perché è stato selezionato questo obiettivo."
     )
 
     def save(self, *args, **kwargs):
         if self.goal_description:
             try:
-                # Verifica se è una modifica del valore
                 if self.pk:
                     previous = DetailsAccount.objects.get(pk=self.pk)
                     if previous.goal_description != self.goal_description:
                         inferred = infer_goal_target(self.goal_description)
                         if inferred in dict(self.GOAL_CHOICES):
                             self.goal_targets = inferred
+                        self.goal_targets_explanation = explain_goal_target(self.goal_description, self.goal_targets)
                 else:
-                    # Nuovo oggetto
                     inferred = infer_goal_target(self.goal_description)
                     if inferred in dict(self.GOAL_CHOICES):
                         self.goal_targets = inferred
+                    self.goal_targets_explanation = explain_goal_target(self.goal_description, self.goal_targets)
             except Exception as e:
                 print(f"Errore durante l'inferenza del goal: {e}")
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.author.first_name} {self.author.last_name} ({self.author.username})"
-
 
 
 class Weight(models.Model):
