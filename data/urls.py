@@ -20,7 +20,7 @@ from .views import (
     GymPlanItemDeleteView, GymPlanSectionListView, GymPlanSectionRetrieveView, GymPlanSectionCreateView,
     GymPlanSectionUpdateView, GymPlanSectionDeleteView, GymPlanSetDetailDeleteView, GymPlanSetDetailUpdateView,
     GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order,
-    WeightAnalysisAIView
+    WeightAnalysisAIView, BodyMeasurementAnalysisView, FoodPlanParsingAIView
 )
 
 urlpatterns = [
@@ -41,6 +41,7 @@ urlpatterns = [
     path('body-measurement/create/', BodyMeasurementCreateView.as_view(), name='body-create'),
     path('body-measurement/update/<int:pk>/', BodyMeasurementUpdateView.as_view(), name='body-update'),
     path('body-measurement/delete/<int:pk>/', BodyMeasurementDeleteView.as_view(), name='body-delete'),
+    path("body-measurement/analysis/", BodyMeasurementAnalysisView.as_view(), name="body-analysis"),
 
     # Food Items
     path('food-item/', FoodItemListView.as_view(), name='fooditem-list'),
@@ -56,6 +57,7 @@ urlpatterns = [
     path('food-plan/create/', FoodPlanCreateView.as_view(), name='foodplan-create'),
     path('food-plan/update/<int:pk>/', FoodPlanUpdateView.as_view(), name='foodplan-update'),
     path('food-plan/delete/<int:pk>/', FoodPlanDeleteView.as_view(), name='foodplan-delete'),
+    path('food-plan/food-parsing/', FoodPlanParsingAIView.as_view(), name='foodplan-parsing'),
 
     # Food Plan Items
     path('food-plan-item/<int:pk>/', FoodPlanItemRetrieveView.as_view(), name='foodplanitem-detail'),

@@ -4,7 +4,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 
-from .utils import infer_goal_target, explain_goal_target  # importa la funzione dalla fase 2
+from data.utils import infer_goal_target, explain_goal_target  # importa la funzione dalla fase 2
 
 class DetailsAccount(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)

@@ -1,4 +1,6 @@
-from rest_framework import generics, serializers
+import json
+
+from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -17,7 +19,8 @@ from .serializers import (
     GymMediaUploadSerializer, GymPlanSerializer, GymPlanItemSerializer, GymPlanSectionSerializer,
     GymPlanSetDetailSerializer, GymPlanSynthesizedSerializer
 )
-from .utils import generate_weight_analysis
+from data.utils import generate_weight_analysis, generate_body_analysis, generate_food_analysis, \
+    find_matching_food_items, select_best_food_item
 
 
 # ======== MIXINS PER OTTIMIZZARE ========
@@ -143,6 +146,40 @@ class BodyMeasurementDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
 
+class BodyMeasurementAnalysisView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            profile = DetailsAccount.objects.get(author=user)
+        except DetailsAccount.DoesNotExist:
+            return Response({"error": "Profilo non trovato"}, status=404)
+
+        qs = BodyMeasurement.objects.filter(author=user).order_by("date_recorded")
+        if not qs.exists():
+            return Response({"error": "Nessuna misurazione registrata"}, status=400)
+
+        data = []
+        for obj in qs:
+            data.append({
+                "date": obj.date_recorded.strftime("%Y-%m-%d"),
+                "chest": float(obj.chest) if obj.chest else None,
+                "bicep": float(obj.bicep) if obj.bicep else None,
+                "thigh": float(obj.thigh) if obj.thigh else None,
+                "waist": float(obj.waist) if obj.waist else None,
+                "hips": float(obj.hips) if obj.hips else None,
+                "abdomen": float(obj.abdomen) if obj.abdomen else None,
+                "calf": float(obj.calf) if obj.calf else None,
+                "neck": float(obj.neck) if obj.neck else None,
+                "shoulders": float(obj.shoulders) if obj.shoulders else None,
+            })
+
+        analysis = generate_body_analysis(data, profile.goal_targets)
+        return Response({"analysis": analysis})
+
+
+
 # ======== FOOD ITEM ========
 class FoodItemListView(generics.ListAPIView):
     queryset = FoodItem.objects.all()
@@ -212,6 +249,43 @@ class FoodPlanDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     queryset = FoodPlan.objects.all()
     serializer_class = FoodPlanSerializer
     permission_classes = [IsAuthenticated]
+
+
+class FoodPlanParsingAIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        sentence = request.data.get("sentence")
+
+        if not sentence:
+            return Response({"error": "Il campo 'sentence' è obbligatorio."}, status=400)
+
+        try:
+            meals = generate_food_analysis(sentence)
+            enriched = []
+
+            for meal in meals:
+                meal_name = meal.get("meal")
+                keywords = meal.get("keywords", [])
+                quantity = meal.get("quantity")
+
+                candidates = find_matching_food_items(keywords)
+                best_match = select_best_food_item(meal_name, candidates)
+
+                enriched.append({
+                    "meal": meal_name,
+                    "keywords": keywords,
+                    "quantity": quantity,
+                    "matched_food_item": best_match
+                })
+
+            return Response({"meals": enriched})
+
+        except json.JSONDecodeError:
+            return Response({"error": "Risposta non in formato JSON valido."}, status=500)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 
 # ======== FOOD PLAN ITEM ========
