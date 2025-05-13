@@ -20,7 +20,9 @@ from .views import (
     GymPlanItemDeleteView, GymPlanSectionListView, GymPlanSectionRetrieveView, GymPlanSectionCreateView,
     GymPlanSectionUpdateView, GymPlanSectionDeleteView, GymPlanSetDetailDeleteView, GymPlanSetDetailUpdateView,
     GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order,
-    WeightAnalysisAIView, BodyMeasurementAnalysisView, FoodPlanParsingAIView
+    WeightAnalysisAIView, BodyMeasurementAnalysisView, FoodPlanParsingAIView, FoodImageParsingAIView,
+    FoodPlanOptimizationAIView, FoodPlanGeneratePlanItemAIView, FoodPlanGenerateMacroAIView,
+    FoodPlanGenerateAlternativeAIView
 )
 
 urlpatterns = [
@@ -57,7 +59,12 @@ urlpatterns = [
     path('food-plan/create/', FoodPlanCreateView.as_view(), name='foodplan-create'),
     path('food-plan/update/<int:pk>/', FoodPlanUpdateView.as_view(), name='foodplan-update'),
     path('food-plan/delete/<int:pk>/', FoodPlanDeleteView.as_view(), name='foodplan-delete'),
-    path('food-plan/food-parsing/', FoodPlanParsingAIView.as_view(), name='foodplan-parsing'),
+    path('food-plan/food-text-parsing/', FoodPlanParsingAIView.as_view(), name='foodplan-text-parsing'),
+    path("food-plan/food-image-parsing/", FoodImageParsingAIView.as_view(), name='foodplan-image-parsing'),
+    path("food-plan/optimize-grams/<int:plan_id>/", FoodPlanOptimizationAIView.as_view(), name="foodplan-optimize-grams"),
+    path("food-plan/generate/<int:plan_id>/", FoodPlanGeneratePlanItemAIView.as_view(), name="foodplan-generate-plan-item"),
+    path("food-plan/generate-macro/", FoodPlanGenerateMacroAIView.as_view(), name="foodplan-generate-macros"),
+    path("food-plan/generate-alternative-section/", FoodPlanGenerateAlternativeAIView.as_view(), name="foodplan-generate-alternative-section"),
 
     # Food Plan Items
     path('food-plan-item/<int:pk>/', FoodPlanItemRetrieveView.as_view(), name='foodplanitem-detail'),

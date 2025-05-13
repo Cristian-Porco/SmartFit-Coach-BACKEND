@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
+import warnings
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -157,6 +158,19 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'  # oppure 'mandatory'
 
 SITE_ID = 1
 
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+warnings.filterwarnings(
+    "ignore",
+    message="app_settings.USERNAME_REQUIRED is deprecated.*",
+    category=UserWarning,
+    module="dj_rest_auth.registration.serializers"
+)
+
+warnings.filterwarnings(
+    "ignore",
+    message="app_settings.EMAIL_REQUIRED is deprecated.*",
+    category=UserWarning,
+    module="dj_rest_auth.registration.serializers"
+)
