@@ -22,7 +22,7 @@ from .views import (
     GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order,
     WeightAnalysisAIView, BodyMeasurementAnalysisView, FoodPlanParsingAIView, FoodImageParsingAIView,
     FoodPlanOptimizationAIView, FoodPlanGeneratePlanItemAIView, FoodPlanGenerateMacroAIView,
-    FoodPlanGenerateAlternativeAIView
+    FoodPlanGenerateAlternativeAIView, FoodPlanCloneView, GymPlanCloneView
 )
 
 urlpatterns = [
@@ -59,6 +59,7 @@ urlpatterns = [
     path('food-plan/create/', FoodPlanCreateView.as_view(), name='foodplan-create'),
     path('food-plan/update/<int:pk>/', FoodPlanUpdateView.as_view(), name='foodplan-update'),
     path('food-plan/delete/<int:pk>/', FoodPlanDeleteView.as_view(), name='foodplan-delete'),
+    path('food-plan/clone/<int:pk>/', FoodPlanCloneView, name='foodplan-clone'),
     path('food-plan/food-text-parsing/', FoodPlanParsingAIView.as_view(), name='foodplan-text-parsing'),
     path("food-plan/food-image-parsing/", FoodImageParsingAIView.as_view(), name='foodplan-image-parsing'),
     path("food-plan/optimize-grams/<int:plan_id>/", FoodPlanOptimizationAIView.as_view(), name="foodplan-optimize-grams"),
@@ -94,6 +95,7 @@ urlpatterns = [
     path('gym-plan/create/', GymPlanCreateView.as_view(), name='gymplan-create'),
     path('gym-plan/update/<int:pk>/', GymPlanUpdateView.as_view(), name='gymplan-update'),
     path('gym-plan/delete/<int:pk>/', GymPlanDeleteView.as_view(), name='gymplan-delete'),
+    path('gym-plan/clone/<int:pk>/', GymPlanCloneView, name='gymplan-clone'),
 
     # Gym Plan Items
     path('gym-plan-item/<int:pk>/', GymPlanItemRetrieveView.as_view(), name='gymplanitem-detail'),

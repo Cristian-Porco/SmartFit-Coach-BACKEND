@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.db.models import ExpressionWrapper, F, FloatField, Sum
 from django.utils import timezone
 from rest_framework import generics, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -255,6 +255,39 @@ class FoodPlanDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     queryset = FoodPlan.objects.all()
     serializer_class = FoodPlanSerializer
     permission_classes = [IsAuthenticated]
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def FoodPlanCloneView(request, pk):
+    original_plan = get_object_or_404(FoodPlan, pk=pk, author=request.user)
+
+    # Cloniamo il piano alimentare
+    new_plan = FoodPlan.objects.create(
+        author=original_plan.author,
+        start_date=original_plan.start_date + timedelta(days=7),  # o `now().date()`
+        end_date=original_plan.end_date + timedelta(days=7),
+        max_kcal=original_plan.max_kcal,
+        max_protein=original_plan.max_protein,
+        max_carbs=original_plan.max_carbs,
+        max_fats=original_plan.max_fats,
+    )
+
+    # Cloniamo gli elementi associati
+    original_items = FoodPlanItem.objects.filter(food_plan=original_plan)
+    for item in original_items:
+        FoodPlanItem.objects.create(
+            eaten=False,
+            food_plan=new_plan,
+            food_item=item.food_item,
+            food_section=item.food_section,
+            quantity_in_grams=item.quantity_in_grams,
+        )
+
+    return Response({
+        "message": "Food plan cloned successfully.",
+        "new_plan_id": new_plan.id
+    }, status=status.HTTP_201_CREATED)
 
 
 class FoodPlanParsingAIView(APIView):
@@ -789,6 +822,70 @@ class GymPlanDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     queryset = GymPlan.objects.all()
     serializer_class = GymPlanSerializer
     permission_classes = [IsAuthenticated]
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def GymPlanCloneView(request, pk):
+    original_plan = get_object_or_404(GymPlan, pk=pk, author=request.user)
+
+    # Calcolo nuove date
+    new_start = original_plan.start_date + timedelta(days=7)
+    new_end = original_plan.end_date + timedelta(days=7)
+
+    # Clona GymPlan
+    new_plan = GymPlan.objects.create(
+        author=original_plan.author,
+        start_date=new_start,
+        end_date=new_end,
+        note=original_plan.note
+    )
+
+    section_mapping = {}
+
+    # Clona GymPlanSection
+    original_sections = GymPlanSection.objects.filter(gym_plan=original_plan)
+    for section in original_sections:
+        new_section = GymPlanSection.objects.create(
+            author=section.author,
+            gym_plan=new_plan,
+            day=section.day,
+            type=section.type,
+            note=section.note
+        )
+        section_mapping[section.id] = new_section
+
+    # Clona GymPlanItem e GymPlanSetDetail
+    for old_section in original_sections:
+        old_items = old_section.gymplanitem_set.all()
+        for item in old_items:
+            new_item = GymPlanItem.objects.create(
+                section=section_mapping[old_section.id],
+                order=item.order,
+                notes=item.notes,
+                intensity_techniques=item.intensity_techniques
+            )
+
+            # Clona i set associati
+            for s in item.sets.all():
+                GymPlanSetDetail.objects.create(
+                    plan_item=new_item,
+                    exercise=s.exercise,  # RIFERIMENTO, non duplicato
+                    order=s.order,
+                    set_number=s.set_number,
+                    prescribed_reps_1=s.prescribed_reps_1,
+                    actual_reps_1=s.actual_reps_1,
+                    prescribed_reps_2=s.prescribed_reps_2,
+                    actual_reps_2=s.actual_reps_2,
+                    rir=s.rir,
+                    rest_seconds=s.rest_seconds,
+                    weight=s.weight,
+                    tempo_fcr=s.tempo_fcr
+                )
+
+    return Response({
+        "message": "Gym plan cloned successfully.",
+        "new_plan_id": new_plan.id
+    }, status=status.HTTP_201_CREATED)
 
 
 # ======== GYM PLAN ITEM ========
