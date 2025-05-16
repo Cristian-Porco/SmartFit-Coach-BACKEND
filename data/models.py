@@ -337,8 +337,8 @@ class GymPlanItem(models.Model):
 
     class TechniqueType(models.TextChoices):
         NULL = 'null', 'Null'
-        BILATERAL = 'bilateral', 'Bilaterale (entrambe le gambe)'
-        UNILATERAL = 'unilateral', 'Unilaterale (gamba singola)'
+        BILATERAL = 'bilateral', 'Bilaterale (entrambe gli arti)'
+        UNILATERAL = 'unilateral', 'Unilaterale (singolo arto)'
         TEMPO_BASED = 'tempo-based', 'Tempo-Based (durata fissa)'
         DROP_SET = 'drop_set', 'Drop Set / Stripping'
         SUPER_SET = 'super_set', 'Super Set / Giant Set'

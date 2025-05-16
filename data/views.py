@@ -26,7 +26,8 @@ from .serializers import (
 from data.utils import generate_weight_analysis, generate_body_analysis, generate_food_analysis, \
     find_matching_food_items, select_best_food_item, generate_food_analysis_from_image_file, \
     generate_foodplan_adjustment, apply_foodplan_adjustment, generate_food_plan_from_context, generate_food_item, \
-    generate_new_macros, generate_alternative_meals
+    generate_new_macros, generate_alternative_meals, classify_section_type, generate_section_note, \
+    generate_gymplan_note, generate_item_note
 
 
 # ======== MIXINS PER OTTIMIZZARE ========
@@ -824,6 +825,67 @@ class GymPlanDeleteView(UserQuerySetMixin, generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
 @api_view(['GET'])
+def GymPlanClassifyDectionAIView(request, pk):
+    try:
+        section = GymPlanSection.objects.get(id=pk)
+
+        # Classifica e aggiorna il tipo
+        category = classify_section_type(section)
+
+        if not category:
+            return Response({"error": "Impossibile classificare la sezione."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "classified_type": category
+        }, status=status.HTTP_200_OK)
+
+    except GymPlanSection.DoesNotExist:
+        return Response({"error": "GymPlanSection non trovata."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def GymPlanSectionGenerateNoteAIView(request, pk):
+    try:
+        section = GymPlanSection.objects.get(id=pk)
+
+        # Genera la nota con il LLM
+        note = generate_section_note(section)
+
+        if not note:
+            return Response({"error": "Impossibile generare la nota."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "generated_note": note
+        }, status=status.HTTP_200_OK)
+
+    except GymPlanSection.DoesNotExist:
+        return Response({"error": "GymPlanSection non trovata."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def GymPlanGenerateNoteAIView(request, pk):
+    try:
+        plan = GymPlan.objects.get(id=pk)
+        note = generate_gymplan_note(plan)
+
+        if not note:
+            return Response({"error": "Nota non generata."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "generated_note": note
+        }, status=status.HTTP_200_OK)
+
+    except GymPlan.DoesNotExist:
+        return Response({"error": "GymPlan non trovata."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def GymPlanCloneView(request, pk):
     original_plan = get_object_or_404(GymPlan, pk=pk, author=request.user)
@@ -908,6 +970,24 @@ class GymPlanItemDeleteView(generics.DestroyAPIView):
     queryset = GymPlanItem.objects.all()
     serializer_class = GymPlanItemSerializer
     permission_classes = [IsAuthenticated]
+
+@api_view(['GET'])
+def GymPlanItemGenerateNoteAIView(request, pk):
+    try:
+        item = GymPlanItem.objects.get(id=pk)
+        note = generate_item_note(item)
+
+        if not note:
+            return Response({"error": "Nota non generata."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "generated_note": note
+        }, status=status.HTTP_200_OK)
+
+    except GymPlanItem.DoesNotExist:
+        return Response({"error": "GymPlanItem non trovato."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

@@ -22,7 +22,8 @@ from .views import (
     GymPlanSetDetailCreateView, GymPlanSetDetailRetrieveView, GymPlanSynthesizedListView, get_first_available_order,
     WeightAnalysisAIView, BodyMeasurementAnalysisView, FoodPlanParsingAIView, FoodImageParsingAIView,
     FoodPlanOptimizationAIView, FoodPlanGeneratePlanItemAIView, FoodPlanGenerateMacroAIView,
-    FoodPlanGenerateAlternativeAIView, FoodPlanCloneView, GymPlanCloneView
+    FoodPlanGenerateAlternativeAIView, FoodPlanCloneView, GymPlanCloneView, GymPlanClassifyDectionAIView,
+    GymPlanGenerateNoteAIView, GymPlanSectionGenerateNoteAIView, GymPlanItemGenerateNoteAIView
 )
 
 urlpatterns = [
@@ -96,6 +97,7 @@ urlpatterns = [
     path('gym-plan/update/<int:pk>/', GymPlanUpdateView.as_view(), name='gymplan-update'),
     path('gym-plan/delete/<int:pk>/', GymPlanDeleteView.as_view(), name='gymplan-delete'),
     path('gym-plan/clone/<int:pk>/', GymPlanCloneView, name='gymplan-clone'),
+    path('gym-plan/generate-note/<int:pk>/', GymPlanGenerateNoteAIView, name='gymplan-generate-note'),
 
     # Gym Plan Items
     path('gym-plan-item/<int:pk>/', GymPlanItemRetrieveView.as_view(), name='gymplanitem-detail'),
@@ -103,6 +105,7 @@ urlpatterns = [
     path('gym-plan-item/update/<int:pk>/', GymPlanItemUpdateView.as_view(), name='gymplanitem-update'),
     path('gym-plan-item/delete/<int:pk>/', GymPlanItemDeleteView.as_view(), name='gymplanitem-delete'),
     path('gym-plan-item/first-available-order/<int:section_id>/', get_first_available_order, name='first_available_order'),
+    path('gym-plan-item/generate-note/<int:pk>/', GymPlanItemGenerateNoteAIView, name='gymplanitem-generate-note'),
 
     # Gym Plan Sections
     path('gym-plan-section/me/', GymPlanSectionListView.as_view(), name='gymplansection-list'),
@@ -110,6 +113,8 @@ urlpatterns = [
     path('gym-plan-section/create/', GymPlanSectionCreateView.as_view(), name='gymplansection-create'),
     path('gym-plan-section/update/<int:pk>/', GymPlanSectionUpdateView.as_view(), name='gymplansection-update'),
     path('gym-plan-section/delete/<int:pk>/', GymPlanSectionDeleteView.as_view(), name='gymplansection-delete'),
+    path('gym-plan-section/classify/<int:pk>/', GymPlanClassifyDectionAIView, name='gymplansection-classify'),
+    path('gym-plan-section/generate-note/<int:pk>/', GymPlanSectionGenerateNoteAIView, name='gymplansection-generate-note'),
 
     # Gym Plan Set Detail
     path('gym-plan-set/<int:pk>/', GymPlanSetDetailRetrieveView.as_view(), name='gymplanset-detail'),

@@ -692,3 +692,172 @@ def generate_alternative_meals(section, user) -> list[dict]:
         })
 
     return [enriched]  # compatibilità con view
+
+
+
+# === Prompt per classificazione gruppo muscolare ===
+type_prompt = PromptTemplate.from_template("""
+Sei un esperto di allenamento in palestra. 
+Dato l'elenco degli esercizi e dettagli sulle serie, indica quale gruppo muscolare viene allenato maggiormente nella giornata.
+
+Restituisci **una sola categoria breve**, come: "Petto", "Schiena", "Gambe", "Full Body", "Push", "Pull", "Spalle", ecc.
+
+Dati della giornata:
+{section_data}
+
+Risposta (solo una parola o breve frase, senza punteggiatura):
+""")
+
+type_chain = type_prompt | llm
+
+def build_section_data(section) -> str:
+    items = section.gymplanitem_set.prefetch_related("sets", "sets__exercise")
+
+    lines = []
+    for item in items:
+        if item.intensity_techniques:
+            lines.append(f"Tecniche d'intensità: {', '.join(item.intensity_techniques)}")
+        for s in item.sets.all():
+            lines.append(
+                f"- {s.exercise.name} | {s.prescribed_reps_1}-{s.prescribed_reps_2} reps | "
+                f"{s.weight}kg | tempo {s.tempo_fcr} | RIR {s.rir} | riposo {s.rest_seconds}s"
+            )
+    return "\n".join(lines)
+
+def classify_section_type(section) -> str:
+    try:
+        section_text = build_section_data(section)
+        result = type_chain.invoke({"section_data": section_text})
+        category = getattr(result, "content", "").strip()
+        if category:
+            section.type = category.capitalize()
+            section.save()
+        return category
+    except Exception as e:
+        print(f"Errore nella classificazione: {e}")
+        return ""
+
+
+# === Prompt per generare nota sugli esercizi ===
+note_prompt = PromptTemplate.from_template("""
+Sei un esperto di allenamento. Ricevi un elenco di esercizi, dettagli sulle serie e sulle tecniche usate per una giornata di allenamento.
+
+Scrivi una **nota sintetica (massimo 300 caratteri)** che spieghi **perché sono stati scelti questi esercizi**, includendo logica dell’allenamento (es. focus muscolare, intensità, varietà, controllo tecnico, recuperi).
+
+Non usare emoji.
+
+Dati della giornata:
+{section_data}
+
+Nota:
+""")
+
+note_chain = note_prompt | llm
+
+def generate_section_note(section) -> str:
+    try:
+        section_text = build_section_data(section)  # Usa la stessa funzione che genera il testo
+        result = note_chain.invoke({"section_data": section_text})
+        note = getattr(result, "content", "").strip()
+        if note:
+            section.note = note
+            section.save()
+        return note
+    except Exception as e:
+        print(f"Errore nella generazione della nota: {e}")
+        return ""
+
+
+# === Prompt per descrizione completa della GymPlan ===
+plan_note_prompt = PromptTemplate.from_template("""
+Sei un esperto di programmazione dell’allenamento.
+
+Dato un riepilogo dettagliato dei giorni (tipologia, tecniche usate, esercizi), scrivi una **breve descrizione (max 400 caratteri)** che riassuma:
+- da quanti giorni è composta la scheda
+- che tipologie di allenamento prevede
+- su cosa si focalizza (volume, intensità, tecnica, forza, ecc.)
+- eventuale varietà o logica strutturata (es. split upper/lower, push/pull, full body alternati)
+- tecniche speciali usate
+- nessuna emoji
+
+Dati della scheda:
+{plan_data}
+
+Nota:
+""")
+
+plan_note_chain = plan_note_prompt | llm
+
+def build_plan_data(gym_plan) -> str:
+    sections = gym_plan.gymplansection_set.prefetch_related("gymplanitem_set__sets", "gymplanitem_set__sets__exercise")
+
+    lines = []
+    for section in sections:
+        lines.append(f"Giorno {section.day.upper()} ({section.type}):")
+        for item in section.gymplanitem_set.all():
+            if item.intensity_techniques:
+                lines.append(f"  - Tecniche: {', '.join(item.intensity_techniques)}")
+            for s in item.sets.all():
+                lines.append(
+                    f"  - {s.exercise.name} | {s.prescribed_reps_1}-{s.prescribed_reps_2} reps | "
+                    f"{s.weight}kg | tempo {s.tempo_fcr}"
+                )
+    return "\n".join(lines)
+
+def generate_gymplan_note(gym_plan) -> str:
+    try:
+        plan_text = build_plan_data(gym_plan)
+        result = plan_note_chain.invoke({"plan_data": plan_text})
+        note = getattr(result, "content", "").strip()
+        if note:
+            gym_plan.note = note
+            gym_plan.save()
+        return note
+    except Exception as e:
+        print(f"Errore nella generazione nota GymPlan: {e}")
+        return ""
+
+
+# === Prompt per generare GymPlanItem.notes ===
+item_note_prompt = PromptTemplate.from_template("""
+Ricevi i dettagli di un esercizio inserito in una scheda di allenamento.
+
+Scrivi una **nota sintetica (massimo 8 parole)** che descriva brevemente il focus dell'esercizio (tecnica, forza, stimolo metabolico, controllo, velocità, esplosività, intensità, resistenza, volume, ecc.).
+
+Non usare emoji.
+
+Dati esercizio:
+{item_data}
+
+Nota:
+""")
+
+item_note_chain = item_note_prompt | llm
+
+
+def build_item_data(item) -> str:
+    sets = item.sets.select_related("exercise")
+
+    lines = []
+    if item.intensity_techniques:
+        lines.append(f"Tecniche d’intensità: {', '.join(item.intensity_techniques)}")
+
+    for s in sets:
+        lines.append(
+            f"{s.exercise.name} | {s.prescribed_reps_1}-{s.prescribed_reps_2} reps | "
+            f"{s.weight}kg | tempo {s.tempo_fcr} | RIR {s.rir} | riposo {s.rest_seconds}s"
+        )
+    return "\n".join(lines)
+
+def generate_item_note(item) -> str:
+    try:
+        item_text = build_item_data(item)
+        result = item_note_chain.invoke({"item_data": item_text})
+        note = getattr(result, "content", "").strip()
+        if note:
+            item.notes = note
+            item.save()
+        return note
+    except Exception as e:
+        print(f"Errore nella generazione nota GymPlanItem: {e}")
+        return ""
