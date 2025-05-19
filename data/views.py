@@ -27,7 +27,8 @@ from data.utils import generate_weight_analysis, generate_body_analysis, generat
     find_matching_food_items, select_best_food_item, generate_food_analysis_from_image_file, \
     generate_foodplan_adjustment, apply_foodplan_adjustment, generate_food_plan_from_context, generate_food_item, \
     generate_new_macros, generate_alternative_meals, classify_section_type, generate_section_note, \
-    generate_gymplan_note, generate_item_note
+    generate_gymplan_note, generate_item_note, generate_plan_chain, parse_exercise_name, \
+    replace_gymplan_item_with_alternative
 
 
 # ======== MIXINS PER OTTIMIZZARE ========
@@ -885,6 +886,74 @@ def GymPlanGenerateNoteAIView(request, pk):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+def GymPlanGenerateEntirePlanAIView(request, pk):
+    try:
+        plan = GymPlan.objects.get(id=pk)
+        days = request.data.get("days")
+
+        if not days or not isinstance(days, list):
+            return Response({"error": "Devi specificare una lista di giorni (es. ['lun', 'mer', 'ven'])."}, status=400)
+
+        db_ex_names = list(GymItem.objects.values_list("name", flat=True))
+
+        result = generate_plan_chain.invoke({"days": ", ".join(days)})
+        content = getattr(result, "content", "{}").strip()
+
+        try:
+            day_plan = json.loads(content)
+        except Exception:
+            day_plan = eval(content)
+
+        # Mappa delle sezioni esistenti indicizzate per giorno
+        existing_sections = {
+            section.day: section
+            for section in GymPlanSection.objects.filter(gym_plan=plan)
+        }
+
+        for day_code, esercizi in day_plan.items():
+            section = existing_sections.get(day_code)
+            if not section:
+                continue  # Oppure: return Response({"error": f"Nessuna sezione per il giorno {day_code}."}, status=400)
+
+            for ex in esercizi:
+                parsed_name = parse_exercise_name(ex["name"], db_ex_names)
+                try:
+                    gym_item = GymItem.objects.get(name__iexact=parsed_name)
+                except GymItem.DoesNotExist:
+                    continue
+
+                item = GymPlanItem.objects.create(
+                    section=section,
+                    order=ex.get("order", 0),
+                    intensity_techniques=[ex.get("technique")] if ex.get("technique") else [],
+                    notes=ex.get("notes", "")
+                )
+
+                total_sets = ex.get("sets", 3)
+                for set_index in range(1, total_sets + 1):
+                    GymPlanSetDetail.objects.create(
+                        plan_item=item,
+                        exercise=gym_item,
+                        order=set_index,
+                        set_number=set_index,
+                        prescribed_reps_1=ex.get("prescribed_reps_1", 8),
+                        prescribed_reps_2=ex.get("prescribed_reps_2", 8),
+                        tempo_fcr=ex.get("tempo_fcr", "2-0-2"),
+                        rir=ex.get("rir", 2),
+                        weight=ex.get("weight", 0),
+                        rest_seconds=ex.get("rest_seconds", 90)
+                    )
+
+        return Response({"status": "Scheda generata correttamente."}, status=201)
+
+    except GymPlan.DoesNotExist:
+        return Response({"error": "GymPlan non trovata."}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def GymPlanCloneView(request, pk):
@@ -988,6 +1057,20 @@ def GymPlanItemGenerateNoteAIView(request, pk):
         return Response({"error": "GymPlanItem non trovato."}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def GymPlanItemGenerateAlternativeAIView(request, pk):
+    try:
+        result = replace_gymplan_item_with_alternative(pk)
+        if "error" in result:
+            return Response(result, status=400)
+        return Response(result, status=200)
+    except GymPlanItem.DoesNotExist:
+        return Response({"error": "GymPlanItem non trovato."}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
 
 
 @api_view(['GET'])

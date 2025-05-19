@@ -23,7 +23,8 @@ from .views import (
     WeightAnalysisAIView, BodyMeasurementAnalysisView, FoodPlanParsingAIView, FoodImageParsingAIView,
     FoodPlanOptimizationAIView, FoodPlanGeneratePlanItemAIView, FoodPlanGenerateMacroAIView,
     FoodPlanGenerateAlternativeAIView, FoodPlanCloneView, GymPlanCloneView, GymPlanClassifyDectionAIView,
-    GymPlanGenerateNoteAIView, GymPlanSectionGenerateNoteAIView, GymPlanItemGenerateNoteAIView
+    GymPlanGenerateNoteAIView, GymPlanSectionGenerateNoteAIView, GymPlanItemGenerateNoteAIView,
+    GymPlanGenerateEntirePlanAIView, GymPlanItemGenerateAlternativeAIView
 )
 
 urlpatterns = [
@@ -98,6 +99,7 @@ urlpatterns = [
     path('gym-plan/delete/<int:pk>/', GymPlanDeleteView.as_view(), name='gymplan-delete'),
     path('gym-plan/clone/<int:pk>/', GymPlanCloneView, name='gymplan-clone'),
     path('gym-plan/generate-note/<int:pk>/', GymPlanGenerateNoteAIView, name='gymplan-generate-note'),
+    path('gym-plan/generate-entire/<int:pk>/', GymPlanGenerateEntirePlanAIView, name='gymplan-generate_entire'),
 
     # Gym Plan Items
     path('gym-plan-item/<int:pk>/', GymPlanItemRetrieveView.as_view(), name='gymplanitem-detail'),
@@ -106,6 +108,7 @@ urlpatterns = [
     path('gym-plan-item/delete/<int:pk>/', GymPlanItemDeleteView.as_view(), name='gymplanitem-delete'),
     path('gym-plan-item/first-available-order/<int:section_id>/', get_first_available_order, name='first_available_order'),
     path('gym-plan-item/generate-note/<int:pk>/', GymPlanItemGenerateNoteAIView, name='gymplanitem-generate-note'),
+    path('gym-plan-item/generate-alternative/<int:pk>/', GymPlanItemGenerateAlternativeAIView, name='gymplanitem-generate-alternative'),
 
     # Gym Plan Sections
     path('gym-plan-section/me/', GymPlanSectionListView.as_view(), name='gymplansection-list'),

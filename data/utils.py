@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 
 from django.db import transaction
 from django.db.models import Q
@@ -861,3 +862,193 @@ def generate_item_note(item) -> str:
     except Exception as e:
         print(f"Errore nella generazione nota GymPlanItem: {e}")
         return ""
+
+
+llm_generate = ChatOpenAI(model="gpt-4o", temperature=0)
+llm_parse = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+# === PROMPT PER GENERARE LA SCHEDA ===
+generate_plan_prompt = PromptTemplate.from_template("""
+Sei un coach esperto. Devi creare una scheda di allenamento settimanale per un utente, in base ai giorni in cui si allena.
+
+Per ciascun giorno, genera una lista di esercizi in inglese, con:
+- nome esercizio
+- ordine
+- numero di serie (tra 3 e 6)
+- tecnica d’intensità (tra: bilateral, unilateral, tempo-based)
+- prescribed_reps_1 (massime ripetizioni per arto sinistro)
+- prescribed_reps_2 (massime ripetizioni per arto destro)
+- tempo_fcr (formato "eccentrica-pausa-concentrica", es. "3-1-2")
+- rir (Reps in reserve, es. 1 o 2)
+- weight (carico indicativo in kg, es. 50)
+- rest_seconds (tempo di recupero in secondi, es. 90)
+- notes (una **breve nota in italiano** che spiega il focus dell’esercizio, **massimo 10 parole**, **prima lettera maiuscola**, **niente emoji**)
+
+Le ripetizioni sono da intendersi per arto.
+Se la tecnica è `"tempo-based"`, allora devi generare solo **una serie** (`sets: 1`) per quell'esercizio.
+
+Restituisci il risultato in **formato JSON valido**, strutturato come nell’esempio qui sotto.
+Non usare blocchi di codice come ```json o simili. Restituisci solo il puro JSON.
+
+Esempio di struttura:
+
+{{ 
+  "lun": [
+    {{
+      "name": "Barbell Squat",
+      "order": 1,
+      "sets": 4,
+      "technique": "tempo-based",
+      "prescribed_reps_1": 6,
+      "prescribed_reps_2": 8,
+      "tempo_fcr": "3-1-1",
+      "rir": 1,
+      "weight": 60,
+      "rest_seconds": 90
+    }}
+  ]
+}}
+
+Giorni selezionati: {days}
+""")
+
+generate_plan_chain = generate_plan_prompt | llm_generate
+
+# === PROMPT PER PARSING NOMI ESERCIZI ===
+name_parser_prompt = PromptTemplate.from_template("""
+Dato il nome dell’esercizio: "{input_name}"
+
+Trova il nome più simile tra questi presenti nel database (case insensitive):
+
+{db_names}
+
+Risposta: (solo uno dei nomi indicati)
+""")
+
+parser_chain = name_parser_prompt | llm_parse
+
+def get_matching_gymitems_by_keywords(input_name: str, all_exercises: list[str]) -> list[str]:
+    """
+    Estrae parole chiave da input_name e filtra gli esercizi del DB che contengono almeno una parola chiave.
+    """
+    keywords = re.findall(r'\w+', input_name.lower())  # ['barbell', 'squat']
+    matched = [
+        ex_name for ex_name in all_exercises
+        if any(k in ex_name.lower() for k in keywords)
+    ]
+    return matched  # Limita a max 15 per evitare esplosione token
+
+def parse_exercise_name(input_name: str, all_exercises: list[str]) -> str:
+    try:
+        filtered = get_matching_gymitems_by_keywords(input_name, all_exercises)
+        if not filtered:
+            filtered = all_exercises[:15]  # fallback se nessuna match
+        result = parser_chain.invoke({
+            "input_name": input_name,
+            "db_names": ", ".join(filtered)
+        })
+        return getattr(result, "content", "").strip()
+    except Exception as e:
+        print(f"Errore parsing nome: {e}")
+        return ""
+
+
+generate_alternative_item_prompt = PromptTemplate.from_template("""
+Sei un coach esperto. Ti fornirò un esercizio attuale in una scheda di allenamento.
+
+Genera un esercizio alternativo che alleni gli **stessi gruppi muscolari**, ma in modo diverso (con attrezzo differente o schema diverso).  
+L’alternativa deve includere:
+- name (nome in inglese)
+- sets (numero serie)
+- prescribed_reps_1 (ripetizioni minime per arto)
+- prescribed_reps_2 (ripetizioni massime per arto)
+- tempo_fcr (formato "eccentrica-pausa-concentrica")
+- rir (Reps in reserve)
+- weight (carico in kg)
+- rest_seconds (recupero in secondi)
+- notes (breve nota in italiano, max 10 parole, prima lettera maiuscola)
+
+Se la tecnica dell’esercizio attuale è "tempo-based", imposta sempre sets: 1.
+
+Non usare blocchi di codice come ```json o simili. Restituisci solo il puro JSON.
+
+Esercizio attuale:
+- Nome: {current_name}
+- Tecnica: {technique}
+""")
+
+alt_chain = generate_alternative_item_prompt | llm_generate
+
+def replace_gymplan_item_with_alternative(item_id):
+    from data.models import GymPlanItem, GymItem, GymPlanSetDetail
+    try:
+        item = GymPlanItem.objects.get(id=item_id)
+        sets = item.sets.all()
+        if not sets.exists():
+            return {"error": "Questo GymPlanItem non ha set associati."}
+
+        s = sets.first()
+        original_name = s.exercise.name
+        muscle = s.exercise.primary_muscle or "Unknown"
+        technique = item.intensity_techniques[0] if item.intensity_techniques else "null"
+
+        # === CHIAMATA GPT PER L'ALTERNATIVA ===
+        result = alt_chain.invoke({
+            "current_name": original_name,
+            "technique": technique
+        })
+        content = getattr(result, "content", "").strip()
+        new_data = json.loads(content)
+
+        # === PARSE DEL NOME NUOVO ===
+        all_names = list(GymItem.objects.values_list("name", flat=True))
+        possible_names = get_matching_gymitems_by_keywords(new_data["name"], all_names)
+        parser_result = parser_chain.invoke({
+            "input_name": new_data["name"],
+            "db_names": ", ".join(possible_names or all_names[:15])
+        })
+        parsed_name = getattr(parser_result, "content", "").strip()
+
+        try:
+            gym_item = GymItem.objects.get(name__iexact=parsed_name)
+        except GymItem.DoesNotExist:
+            return {"error": f"Esercizio '{parsed_name}' non trovato nel database."}
+
+        # === SALVA ITEM PRIMA DI USARE .sets ===
+        item.notes = new_data.get("notes", "")
+        item.intensity_techniques = [technique]
+        item.save()
+
+        # === CANCELLA SET PRECEDENTI ===
+        item.sets.all().delete()
+
+        # === CREA NUOVI SET ===
+        total_sets = new_data.get("sets", 3)
+        for i in range(1, total_sets + 1):
+            GymPlanSetDetail.objects.create(
+                plan_item=item,
+                exercise=gym_item,
+                order=i,
+                set_number=i,
+                prescribed_reps_1=new_data.get("prescribed_reps_1", 8),
+                prescribed_reps_2=new_data.get("prescribed_reps_2", 10),
+                tempo_fcr=new_data.get("tempo_fcr", "2-0-2"),
+                rir=new_data.get("rir", 2),
+                weight=new_data.get("weight", 0),
+                rest_seconds=new_data.get("rest_seconds", 90)
+            )
+
+        return {
+            "status": "Esercizio sostituito con successo.",
+            "original_name": original_name,
+            "new_name": gym_item.name,
+            "sets": total_sets,
+            "notes": item.notes
+        }
+
+    except GymPlanItem.DoesNotExist:
+        return {"error": "GymPlanItem non trovato."}
+    except json.JSONDecodeError:
+        return {"error": "Risposta GPT non è un JSON valido."}
+    except Exception as e:
+        return {"error": str(e)}
