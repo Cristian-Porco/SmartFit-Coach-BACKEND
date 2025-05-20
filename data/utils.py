@@ -1052,3 +1052,108 @@ def replace_gymplan_item_with_alternative(item_id):
         return {"error": "Risposta GPT non è un JSON valido."}
     except Exception as e:
         return {"error": str(e)}
+
+
+from langchain.prompts import PromptTemplate
+
+generate_warmup_prompt = PromptTemplate.from_template("""
+Sei un coach esperto. Ti fornirò i dettagli di un esercizio principale (con i suoi set) e devi creare una o più serie di **riscaldamento** per lo stesso esercizio.
+
+Le serie di riscaldamento devono:
+- usare lo stesso esercizio principale
+- avere `set_number = 0`
+- avere `order` incrementale da 1 in poi
+- usare carichi e ripetizioni inferiori rispetto alle serie reali
+- essere utili a preparare gradualmente il corpo all’esercizio target
+
+Per ogni serie di riscaldamento restituisci:
+- order (1, 2, 3...)
+- prescribed_reps_1 e 2 (ripetizioni min/max per arto)
+- tempo_fcr (formato "3-1-1")
+- rir
+- weight (in kg, inferiore rispetto a quello reale)
+- rest_seconds
+
+Restituisci **esattamente** un array JSON valido, **senza oggetti wrapper** e **senza blocchi di codice tipo ```json**.
+Esempio corretto:
+
+[
+  {{
+    "order": 1,
+    "prescribed_reps_1": 8,
+    "prescribed_reps_2": 10,
+    "tempo_fcr": "2-1-2",
+    "rir": 4,
+    "weight": 20,
+    "rest_seconds": 60
+  }},
+  {{
+    "order": 2,
+    "prescribed_reps_1": 6,
+    "prescribed_reps_2": 8,
+    "tempo_fcr": "2-1-2",
+    "rir": 3,
+    "weight": 30,
+    "rest_seconds": 60
+  }}
+]
+
+Esercizio principale:
+- Nome: {exercise_name}
+- Serie target: {series_summary}
+- Peso usato: {main_weight} kg
+""")
+
+generate_warmup_chain = generate_warmup_prompt | llm_generate
+
+def generate_warmup_sets(item: "GymPlanItem") -> dict:
+    try:
+        sets = item.sets.order_by("set_number")
+        if not sets.exists():
+            return {"error": "Questo esercizio non ha serie."}
+
+        exercise = sets.first().exercise
+        main_weight = max([s.weight for s in sets if s.weight], default=0)
+        series_summary = "; ".join(
+            f"{s.prescribed_reps_1}-{s.prescribed_reps_2} reps @ {s.weight}kg"
+            for s in sets
+        )
+
+        # === CHIAMATA GPT-4o ===
+        llm = ChatOpenAI(model="gpt-4o", temperature=0)
+        chain = generate_warmup_prompt | llm
+        result = chain.invoke({
+            "exercise_name": exercise.name,
+            "series_summary": series_summary,
+            "main_weight": main_weight
+        })
+        content = getattr(result, "content", "").strip()
+        warmup_data = json.loads(content)
+
+        # === CREA LE SERIE DI RISCALDAMENTO ===
+        created = []
+        for w in warmup_data:
+            from data.models import GymPlanSetDetail
+            new_set = GymPlanSetDetail.objects.create(
+                plan_item=item,
+                exercise=exercise,
+                set_number=0,
+                order=w["order"],
+                prescribed_reps_1=w["prescribed_reps_1"],
+                prescribed_reps_2=w["prescribed_reps_2"],
+                tempo_fcr=w["tempo_fcr"],
+                rir=w["rir"],
+                weight=w["weight"],
+                rest_seconds=w["rest_seconds"]
+            )
+            created.append(new_set.id)
+
+        return {
+            "status": f"{len(created)} serie di riscaldamento generate con successo.",
+            "set_ids": created
+        }
+
+    except json.JSONDecodeError:
+        return {"error": "Risposta GPT non è un JSON valido."}
+    except Exception as e:
+        return {"error": str(e)}

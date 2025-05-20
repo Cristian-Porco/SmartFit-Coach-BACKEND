@@ -24,7 +24,7 @@ from .views import (
     FoodPlanOptimizationAIView, FoodPlanGeneratePlanItemAIView, FoodPlanGenerateMacroAIView,
     FoodPlanGenerateAlternativeAIView, FoodPlanCloneView, GymPlanCloneView, GymPlanClassifyDectionAIView,
     GymPlanGenerateNoteAIView, GymPlanSectionGenerateNoteAIView, GymPlanItemGenerateNoteAIView,
-    GymPlanGenerateEntirePlanAIView, GymPlanItemGenerateAlternativeAIView
+    GymPlanGenerateEntirePlanAIView, GymPlanItemGenerateAlternativeAIView, GymPlanItemGenerateWarmupAIView
 )
 
 urlpatterns = [
@@ -109,6 +109,7 @@ urlpatterns = [
     path('gym-plan-item/first-available-order/<int:section_id>/', get_first_available_order, name='first_available_order'),
     path('gym-plan-item/generate-note/<int:pk>/', GymPlanItemGenerateNoteAIView, name='gymplanitem-generate-note'),
     path('gym-plan-item/generate-alternative/<int:pk>/', GymPlanItemGenerateAlternativeAIView, name='gymplanitem-generate-alternative'),
+    path('gym-plan-item/generate-warmup/<int:pk>/', GymPlanItemGenerateWarmupAIView, name='gymplanitem-generate-warmup'),
 
     # Gym Plan Sections
     path('gym-plan-section/me/', GymPlanSectionListView.as_view(), name='gymplansection-list'),

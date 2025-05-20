@@ -28,7 +28,7 @@ from data.utils import generate_weight_analysis, generate_body_analysis, generat
     generate_foodplan_adjustment, apply_foodplan_adjustment, generate_food_plan_from_context, generate_food_item, \
     generate_new_macros, generate_alternative_meals, classify_section_type, generate_section_note, \
     generate_gymplan_note, generate_item_note, generate_plan_chain, parse_exercise_name, \
-    replace_gymplan_item_with_alternative
+    replace_gymplan_item_with_alternative, generate_warmup_sets
 
 
 # ======== MIXINS PER OTTIMIZZARE ========
@@ -1071,6 +1071,19 @@ def GymPlanItemGenerateAlternativeAIView(request, pk):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+
+@api_view(["GET"])
+def GymPlanItemGenerateWarmupAIView(request, pk):
+    try:
+        item = GymPlanItem.objects.get(id=pk)
+        result = generate_warmup_sets(item)
+        if "error" in result:
+            return Response(result, status=400)
+        return Response(result, status=201)
+    except GymPlanItem.DoesNotExist:
+        return Response({"error": "GymPlanItem non trovato."}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(['GET'])
