@@ -24,7 +24,8 @@ from .views import (
     FoodPlanOptimizationAIView, FoodPlanGeneratePlanItemAIView, FoodPlanGenerateMacroAIView,
     FoodPlanGenerateAlternativeAIView, FoodPlanCloneView, GymPlanCloneView, GymPlanClassifyDectionAIView,
     GymPlanGenerateNoteAIView, GymPlanSectionGenerateNoteAIView, GymPlanItemGenerateNoteAIView,
-    GymPlanGenerateEntirePlanAIView, GymPlanItemGenerateAlternativeAIView, GymPlanItemGenerateWarmupAIView
+    GymPlanGenerateEntirePlanAIView, GymPlanItemGenerateAlternativeAIView, GymPlanItemGenerateWarmupAIView,
+    GymPlanSetDetailGenerateSuggestedWeightAIView
 )
 
 urlpatterns = [
@@ -125,6 +126,7 @@ urlpatterns = [
     path('gym-plan-set/create/', GymPlanSetDetailCreateView.as_view(), name='gymplanset-create'),
     path('gym-plan-set/update/<int:pk>/', GymPlanSetDetailUpdateView.as_view(), name='gymplanset-update'),
     path('gym-plan-set/delete/<int:pk>/', GymPlanSetDetailDeleteView.as_view(), name='gymplanset-delete'),
+    path('gym-plan-set/suggested-weight/<int:pk>/', GymPlanSetDetailGenerateSuggestedWeightAIView, name='gymplanset-suggested-weight'),
 
     # Gym Media Upload
     path('gym-media-upload/<int:pk>/', GymMediaUploadRetrieveView.as_view(), name='gymmediaupload-detail'),

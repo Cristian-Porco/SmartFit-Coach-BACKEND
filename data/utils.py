@@ -869,7 +869,13 @@ llm_parse = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # === PROMPT PER GENERARE LA SCHEDA ===
 generate_plan_prompt = PromptTemplate.from_template("""
-Sei un coach esperto. Devi creare una scheda di allenamento settimanale per un utente, in base ai giorni in cui si allena.
+Sei un coach esperto. Devi creare una scheda di allenamento settimanale per un utente, in base ai giorni in cui si allena e alle sue misure recenti.
+
+Obiettivo dell’utente: {goal}
+
+Dati recenti (ultimi 30 giorni):
+- Misure corporee: {body_measurements}
+- Peso corporeo: {weights}
 
 Per ciascun giorno, genera una lista di esercizi in inglese, con:
 - nome esercizio
@@ -1054,8 +1060,6 @@ def replace_gymplan_item_with_alternative(item_id):
         return {"error": str(e)}
 
 
-from langchain.prompts import PromptTemplate
-
 generate_warmup_prompt = PromptTemplate.from_template("""
 Sei un coach esperto. Ti fornirò i dettagli di un esercizio principale (con i suoi set) e devi creare una o più serie di **riscaldamento** per lo stesso esercizio.
 
@@ -1157,3 +1161,28 @@ def generate_warmup_sets(item: "GymPlanItem") -> dict:
         return {"error": "Risposta GPT non è un JSON valido."}
     except Exception as e:
         return {"error": str(e)}
+
+# === PROMPT PER SUGGERIMENTO PESO ESERCIZI ===
+suggest_weight_prompt = PromptTemplate.from_template("""
+Sei un coach esperto. Ti fornirò una serie di set eseguiti da un utente per un determinato esercizio.
+
+Set (JSON):
+{sets_summary}
+
+In base a questi dati, suggerisci un **peso ideale** (in kg) da usare oggi, coerente con l’andamento.
+
+Restituisci **solo il numero**, senza testo aggiuntivo, note o simboli. Nessuna unità di misura. Nessun blocco di codice.
+""")
+
+def get_suggested_weight(sets_data: list) -> float:
+    import json
+
+    sets_summary = json.dumps(sets_data)
+
+    result = suggest_weight_prompt | llm_parse
+    response = result.invoke({"sets_summary": sets_summary})
+    
+    try:
+        return float(response.content.strip())
+    except Exception:
+        return 0.0

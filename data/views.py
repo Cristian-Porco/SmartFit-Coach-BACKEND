@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.db.models import ExpressionWrapper, F, FloatField, Sum
 from django.utils import timezone
+from django.utils.timezone import now
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -28,7 +29,7 @@ from data.utils import generate_weight_analysis, generate_body_analysis, generat
     generate_foodplan_adjustment, apply_foodplan_adjustment, generate_food_plan_from_context, generate_food_item, \
     generate_new_macros, generate_alternative_meals, classify_section_type, generate_section_note, \
     generate_gymplan_note, generate_item_note, generate_plan_chain, parse_exercise_name, \
-    replace_gymplan_item_with_alternative, generate_warmup_sets
+    replace_gymplan_item_with_alternative, generate_warmup_sets, get_suggested_weight
 
 
 # ======== MIXINS PER OTTIMIZZARE ========
@@ -890,22 +891,49 @@ def GymPlanGenerateNoteAIView(request, pk):
 def GymPlanGenerateEntirePlanAIView(request, pk):
     try:
         plan = GymPlan.objects.get(id=pk)
+        user = plan.author
         days = request.data.get("days")
 
         if not days or not isinstance(days, list):
             return Response({"error": "Devi specificare una lista di giorni (es. ['lun', 'mer', 'ven'])."}, status=400)
 
+        # === Recupera obiettivo dell'utente ===
+        details = DetailsAccount.objects.filter(author=user).first()
+        goal = details.goal_targets if details and details.goal_targets else "Non specificato"
+
+        # === Recupera pesi e misurazioni ultimi 30 giorni ===
+        cutoff_date = now().date() - timedelta(days=30)
+
+        weights = list(Weight.objects.filter(author=user, date_recorded__gte=cutoff_date)
+                       .values_list("weight_value", flat=True))
+        weight_str = ", ".join(str(w) for w in weights) or "Nessun dato"
+
+        measurements = BodyMeasurement.objects.filter(
+            author=user,
+            date_recorded__gte=cutoff_date
+        )
+
+        measurement_str = "; ".join(
+            f"{m.date_recorded}: {round(m.average_measurement(), 2)} cm"
+            for m in measurements
+            if m.average_measurement() is not None
+        ) or "Nessun dato"
+
         db_ex_names = list(GymItem.objects.values_list("name", flat=True))
 
-        result = generate_plan_chain.invoke({"days": ", ".join(days)})
-        content = getattr(result, "content", "{}").strip()
+        result = generate_plan_chain.invoke({
+            "days": ", ".join(days),
+            "goal": goal,
+            "body_measurements": measurement_str,
+            "weights": weight_str
+        })
 
+        content = getattr(result, "content", "{}").strip()
         try:
             day_plan = json.loads(content)
         except Exception:
             day_plan = eval(content)
 
-        # Mappa delle sezioni esistenti indicizzate per giorno
         existing_sections = {
             section.day: section
             for section in GymPlanSection.objects.filter(gym_plan=plan)
@@ -914,7 +942,7 @@ def GymPlanGenerateEntirePlanAIView(request, pk):
         for day_code, esercizi in day_plan.items():
             section = existing_sections.get(day_code)
             if not section:
-                continue  # Oppure: return Response({"error": f"Nessuna sezione per il giorno {day_code}."}, status=400)
+                continue
 
             for ex in esercizi:
                 parsed_name = parse_exercise_name(ex["name"], db_ex_names)
@@ -951,7 +979,6 @@ def GymPlanGenerateEntirePlanAIView(request, pk):
         return Response({"error": "GymPlan non trovata."}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
-
 
 
 @api_view(['GET'])
@@ -1148,3 +1175,36 @@ class GymPlanSetDetailDeleteView(generics.DestroyAPIView):
     queryset = GymPlanSetDetail.objects.all()
     serializer_class = GymPlanSetDetailSerializer
     permission_classes = [IsAuthenticated]
+
+@api_view(['GET'])
+def GymPlanSetDetailGenerateSuggestedWeightAIView(request, pk):
+    user = request.user
+    exercise = get_object_or_404(GymItem, id=pk)
+
+    sets = GymPlanSetDetail.objects.filter(
+        exercise=exercise,
+        plan_item__section__gym_plan__author=user
+    ).select_related("plan_item__section__gym_plan").order_by("plan_item__section__gym_plan__start_date")
+
+    if not sets.exists():
+        return Response({"error": "Nessun set trovato per questo esercizio e utente."}, status=404)
+
+    sets_data = []
+    for s in sets:
+        date = s.plan_item.section.gym_plan.start_date
+        sets_data.append({
+            "date": date.isoformat(),
+            "weight": s.weight,
+            "prescribed_reps_1": s.prescribed_reps_1,
+            "prescribed_reps_2": s.prescribed_reps_2,
+            "rir": s.rir,
+            "tempo_fcr": s.tempo_fcr,
+            "rest_seconds": s.rest_seconds,
+        })
+
+    suggested_weight = get_suggested_weight(sets_data)
+
+    return Response({
+        "exercise": exercise.name,
+        "suggested_weight": suggested_weight
+    })
