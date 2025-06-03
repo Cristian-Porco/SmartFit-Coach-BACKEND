@@ -44,8 +44,8 @@ Risposta:
 """)
 
 # Questa riga crea una catena LangChain combinando il prompt definito sopra con un modello linguistico (ad es. GPT-3.5).
-# La catena si occupa di ricevere in input una descrizione testuale dell'obiettivo di allenamento dell'utente
-# (come ad esempio: "Voglio diventare più forte e migliorare la mia panca piana") e produce in risposta 
+# La catena si occupa di ricevere in input una descrizione testuale dell'obiettivo dell'utente
+# (come ad esempio: "Voglio diventare più forte e migliorare la mia forma fisica") e produce in risposta 
 # una classificazione automatica dell'obiettivo in una delle seguenti categorie predefinite: 
 # 'fitness', 'bodybuilding', 'powerlifting', 'streetlifting'.
 #
@@ -1352,7 +1352,7 @@ def parse_exercise_name(input_name: str, all_exercises: list[str]) -> str:
 
 
 
-food_item_generate_alternative_prompt = PromptTemplate.from_template("""
+gym_item_generate_alternative_prompt = PromptTemplate.from_template("""
 Sei un coach esperto. Ti fornirò un esercizio attuale in una scheda di allenamento.
 
 Genera un esercizio alternativo che alleni gli **stessi gruppi muscolari**, ma in modo diverso (con attrezzo differente o schema diverso).  
@@ -1376,7 +1376,7 @@ Esercizio attuale:
 - Tecnica: {technique}
 """)
 
-food_item_generate_alternative_chain = food_item_generate_alternative_prompt | llm_4o
+gym_item_generate_alternative_chain = gym_item_generate_alternative_prompt | llm_4o
 
 def replace_gymplan_item_with_alternative(item_id):
     """
@@ -1401,7 +1401,7 @@ def replace_gymplan_item_with_alternative(item_id):
         technique = item.intensity_techniques[0] if item.intensity_techniques else "null"
 
         # === INVOCAZIONE GPT PER GENERARE UN ESERCIZIO ALTERNATIVO ===
-        result = food_item_generate_alternative_chain.invoke({
+        result = gym_item_generate_alternative_chain.invoke({
             "current_name": original_name,
             "technique": technique
         })
